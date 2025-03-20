@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: ProductService
+  config:
+    import: optional:configserver:http://localhost:8888
+
+logging:
+  level:
+    root: INFO
+  appender:
+    logstash:
+      destination: logstash:5000

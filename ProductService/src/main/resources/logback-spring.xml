@@ -1,0 +1,24 @@
+<configuration>
+    <!-- Appender gửi log đến Logstash -->
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>host.docker.internal:5000</destination>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
+    </appender>
+
+    <!-- Appender hiển thị log trên console với màu sắc -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %highlight(%-5level) %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Gửi INFO, WARN, ERROR đến Logstash -->
+    <root level="INFO">
+        <appender-ref ref="LOGSTASH"/>
+    </root>
+
+    <!-- Console chỉ hiển thị INFO & ERROR (bỏ WARN) nhưng vẫn có màu -->
+    <logger name="ROOT" level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+</configuration>

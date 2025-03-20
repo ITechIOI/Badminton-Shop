@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: jdbc:mysql://paymentservice-haruki10591-7ac1.h.aivencloud.com:27675/orderservice?sslMode=REQUIRED
+    username: avnadmin
+    password: AVNS_4OULqQlI7UPul425sAn
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  kafka:
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.type.mapping: orderResponse:com.example.orderservice.modules.Orders.dto.OrderResponse
+
+    consumer:
+      bootstrap-servers: localhost:9092
+      group-id: paymentGroup
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: paymentResponse:com.example.orderservice.modules.feign.Payments.PaymentResponse
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "http://localhost:9098/realms/micro-service"
+          jwk-set-uri: http://localhost:9098/realms/micro-service/protocol/openid-connect/certs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+server:
+  port: 8003
+
+application:
+  config:
+    user-url: http://localhost:8222/users/users
+    product-url: http://localhost:8222/products/products
+

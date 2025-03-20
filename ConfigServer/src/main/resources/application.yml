@@ -1,0 +1,18 @@
+server:
+  port: 8888
+
+spring:
+  profiles:
+    active: native
+  application:
+    name: ConfigServer
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/configurations
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0

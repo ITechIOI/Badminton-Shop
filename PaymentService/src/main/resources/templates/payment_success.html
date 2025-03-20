@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán thành công</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .container {
+            background: white;
+            max-width: 400px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .success-icon {
+            font-size: 50px;
+            color: #31a24c;
+            display: inline-block;
+            animation: pop-scale 0.8s ease-out, shake 0.6s ease-in-out 0.8s;
+        }
+
+        /* Hiệu ứng phóng to thu nhỏ */
+        @keyframes pop-scale {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        /* Hiệu ứng rung nhẹ */
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            50% { transform: rotate(-5deg); }
+            75% { transform: rotate(3deg); }
+        }
+
+        .success-message {
+            font-size: 22px;
+            color: #333;
+            margin-top: 15px;
+        }
+
+        .home-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #1877f2;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .home-button:hover {
+            background-color: #155db5;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="success-icon">✅</div>
+    <div class="success-message">Thanh toán thành công!</div>
+    <a href="/" class="home-button">Quay về trang chủ</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+server:
+  port: 8222
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: UserService
+          uri: lb:http://USERSERVICE
+          predicates:
+            - Path=/users/**
+        - id: ProductService
+          uri: lb:http://PRODUCTSERVICE
+          predicates:
+            - Path=/products/**
+        - id: OrderService
+          uri: lb:http://ORDERSERVICE
+          predicates:
+            - Path=/orders/**
+        - id: PaymentService
+          uri: lb:http://PAYMENTSERVICE
+          predicates:
+            - Path=/payment/**
+        - id: NotificationService
+          uri: lb:http://NOTIFICATIONSERVICE
+          predicates:
+            - Path=/notifications/**
+        - id: ReportService
+          uri: lb:http://REPORTSERVICE
+          predicates:
+            - Path=/reports/**

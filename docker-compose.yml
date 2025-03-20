@@ -1,0 +1,119 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - microservices-net
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: ms_kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+    networks:
+      - microservices-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+      - xpack.monitoring.templates.enabled=true
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent --fail http://localhost:9200/_cluster/health || exit 1" ]
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - microservices-net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.3
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    networks:
+      - microservices-net
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.17.3
+    container_name: logstash
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    ports:
+      - "5000:5000"  # Nhận logs từ Microservices qua TCP
+      - "9600:9600"  # Cổng quản lý Logstash
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  zipkin:
+    container_name: zipkin
+    image: openzipkin/zipkin
+    # Thêm volume để lưu file log hoặc thư mục tuỳ ý
+    volumes:
+      - zipkin-data:/zipkin-data
+    ports:
+      - "9411:9411"
+    networks:
+      - microservices-net
+#    environment:
+#      - STORAGE_TYPE=elasticsearch
+#      - ES_HOSTS=http://elasticsearch:9200
+#      - ES_INDEX=zipkin
+#    depends_on:
+#      elasticsearch:
+#        condition: service_healthy
+
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:24.0.2
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      DB_VENDOR: h2
+    volumes:
+      - keycloak-h2-data:/opt/keycloak/data
+    ports:
+      - "9098:8080"
+    networks:
+      - microservices-net
+    command:
+      - "start-dev"
+
+volumes:
+  keycloak-h2-data:
+  zipkin-data:
+  es_data:
+
+networks:
+  microservices-net:
+    driver: bridge
