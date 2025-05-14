@@ -215,6 +215,9 @@ public class UserService {
         // 1. Lấy user trong MySQL
         Users user = userRepository.findOneById(userId);
         String keycloakId = user.getKeycloakId();
+
+        System.out.println("Keycloak ID: " + keycloakId);
+
         if (user == null) {
             throw new NotFoundException("User not found in MySQL");
         }
