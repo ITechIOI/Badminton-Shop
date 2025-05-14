@@ -13,23 +13,21 @@ import org.springframework.stereotype.Service;
 @Service
 public interface UserRepository extends JpaRepository<Users, Long> {
     Users findUserById(Long id);
-    Users findUserByUsername(String username);
-    Users findUserByEmail(String email);
 
     @Query("SELECT u FROM Users u WHERE u.id = :id AND u.deletedAt IS NULL")
     Users findOneById(Long id);
 
-    @Query("SELECT u FROM Users u WHERE u.username = :username AND u.deletedAt IS NULL")
-    Users findOneByUsername(String username);
-
-    @Query("SELECT u FROM Users u WHERE u.email = :email AND u.deletedAt IS NULL")
-    Users findOneByEmail(String email);
-
     @Query("SELECT u FROM Users u WHERE u.deletedAt IS NULL")
     public Page<Users> findAllUsers(Pageable pageable);
+
+    // Get user by keycloak id
+    @Query("SELECT u FROM Users u WHERE u.keycloakId = :keycloakId AND u.deletedAt IS NULL")
+    Users findOneByKeycloakId(String keycloakId);
 
     @Modifying
     @Transactional
     @Query("UPDATE Users u SET u.deletedAt = CURRENT_TIMESTAMP WHERE u.id = :id")
     void softDeleteById(Long id);
 }
+
+    

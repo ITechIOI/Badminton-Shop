@@ -1,4 +1,150 @@
 services:
+  config-server:
+    build: ./ConfigServer
+    container_name: config-server
+    depends_on:
+      - kafka
+      - elasticsearch
+      - logstash
+      - kibana
+      - zipkin
+      - keycloak
+    ports:
+      - "8888:8888"
+    networks:
+      - microservices-net
+
+  discovery-server:
+    build: ./DiscoveryServer
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      - config-server
+    networks:
+      - microservices-net
+
+  gateway:
+    build: ./Gateway
+    container_name: gateway-service
+    ports:
+      - "8222:8222"
+    depends_on:
+      - config-server
+      - discovery-server
+    networks:
+      - microservices-net
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_APPLICATION_NAME: GatewayService
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/micro-service
+      SPRING_CLOUD_DISCOVERY_CLIENT_SIMPLE_HINTS.USER-SERVICE: "http://user-service:8001" # Gợi ý URL cho Gateway
+
+  user-service:
+    build: ./UserService
+    container_name: user-service
+    ports:
+      - "8001:8001"
+    depends_on:
+      - config-server
+      - discovery-server
+    networks:
+      - microservices-net
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_APPLICATION_NAME: UserService
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/micro-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true" # Sử dụng IP thay vì hostname
+      EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: 10
+      EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: 30
+
+  product-service:
+    build: ./ProductService
+    container_name: product-service
+    ports:
+      - "8002:8002"
+    depends_on:
+      - config-server
+      - discovery-server
+    networks:
+      - microservices-net
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_APPLICATION_NAME: ProductService
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/micro-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true" # Sử dụng IP thay vì hostname
+      EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: 10
+      EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: 30
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  order-service:
+    build: ./OrderService
+    container_name: order-service
+    ports:
+      - "8003:8003"
+    depends_on:
+      - config-server
+      - discovery-server
+    networks:
+      - microservices-net
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_APPLICATION_NAME: OrderService
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/micro-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true" # Sử dụng IP thay vì hostname
+      EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: 10
+      EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: 30
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  payment-service:
+    build: ./PaymentService
+    container_name: payment-service
+    ports:
+      - "8004:8004"
+    depends_on:
+      - config-server
+      - discovery-server
+    networks:
+      - microservices-net
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_APPLICATION_NAME: PaymentService
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/micro-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true" # Sử dụng IP thay vì hostname
+      EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: 10
+      EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: 30
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  notification-service:
+    build: ./NotificationService
+    container_name: notification-service
+    ports:
+      - "8005:8005"
+    depends_on:
+      - config-server
+      - discovery-server
+    networks:
+      - microservices-net
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_APPLICATION_NAME: NotificationService
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/micro-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true" # Sử dụng IP thay vì hostname
+      EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: 10
+      EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: 30
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
@@ -24,7 +170,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
     networks:
       - microservices-net
 
@@ -37,7 +183,11 @@ services:
       - xpack.security.enabled=false
       - xpack.monitoring.templates.enabled=true
     healthcheck:
-      test: [ "CMD-SHELL", "curl --silent --fail http://localhost:9200/_cluster/health || exit 1" ]
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail http://localhost:9200/_cluster/health || exit 1",
+        ]
       interval: 30s
       retries: 3
       start_period: 30s
@@ -67,8 +217,8 @@ services:
     volumes:
       - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     ports:
-      - "5000:5000"  # Nhận logs từ Microservices qua TCP
-      - "9600:9600"  # Cổng quản lý Logstash
+      - "5000:5000" # Nhận logs từ Microservices qua TCP
+      - "9600:9600" # Cổng quản lý Logstash
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -78,20 +228,12 @@ services:
   zipkin:
     container_name: zipkin
     image: openzipkin/zipkin
-    # Thêm volume để lưu file log hoặc thư mục tuỳ ý
     volumes:
       - zipkin-data:/zipkin-data
     ports:
       - "9411:9411"
     networks:
       - microservices-net
-#    environment:
-#      - STORAGE_TYPE=elasticsearch
-#      - ES_HOSTS=http://elasticsearch:9200
-#      - ES_INDEX=zipkin
-#    depends_on:
-#      elasticsearch:
-#        condition: service_healthy
 
   keycloak:
     container_name: keycloak
@@ -100,14 +242,19 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       DB_VENDOR: h2
+      # KC_HOSTNAME: keycloak
     volumes:
       - keycloak-h2-data:/opt/keycloak/data
     ports:
       - "9098:8080"
     networks:
       - microservices-net
+    #    command:
+    #      - "start-dev"
     command:
       - "start-dev"
+      - --hostname-strict=false
+      - --hostname-url=http://keycloak:8080
 
 volumes:
   keycloak-h2-data:

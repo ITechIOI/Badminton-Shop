@@ -6,9 +6,18 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public record UserResponse(
         Long id,
         String name,
-        String username,
-        String password,
-        String email,
         String gender,
-        Long roleId
-) {}
+        String avatar,
+        String phone,
+        String email,
+        String username,
+        String roles
+) {
+    public String toString() {
+        return "UserResponse{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'';
+    }
+}

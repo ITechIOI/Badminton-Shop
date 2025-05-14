@@ -37,6 +37,7 @@ public class OrderDetailService implements OrderDetailServiceInterface {
         ProductResponse product = productClient.getProductById(createOrderDetailDto.getProductId()).getBody();
         orderDetails.setProudctId(createOrderDetailDto.getProductId());
         orderDetails.setQuantity(createOrderDetailDto.getQuantity());
+        orderDetails.setPrice(product.price());
         Orders order = orderService.findOrderById(createOrderDetailDto.getOrderId());
         orderDetails.setOrder(order);
         return orderRepository.save(orderDetails);
@@ -98,8 +99,9 @@ public class OrderDetailService implements OrderDetailServiceInterface {
         for (OrderDetails orderDetailItem : orderDetails) {
             OrderDetailResponse response = new OrderDetailResponse(
                     orderDetailItem.getQuantity(),
-                    orderDetailItem.getOrder().getId(),
-                    orderDetailItem.getProudctId()
+                    orderDetailItem.getPrice(),
+                    orderDetailItem.getProudctId(),
+                    orderDetailItem.getOrder().getId()
             );
             orderDetailResponses.add(response);
         }
@@ -114,6 +116,9 @@ public class OrderDetailService implements OrderDetailServiceInterface {
         }
         if (updateOrderDetailDto.getProductId() != null) {
             ProductResponse product = productClient.getProductById(updateOrderDetailDto.getProductId()).getBody();
+        }
+        if (updateOrderDetailDto.getPrice() != null) {
+            orderDetails.setPrice(updateOrderDetailDto.getPrice());
         }
         try {
             BeanUtilsBean notNull = new NullAwareBeanUtilsBean();

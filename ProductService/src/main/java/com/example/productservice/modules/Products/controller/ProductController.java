@@ -25,15 +25,8 @@ public class ProductController {
 
     @PostMapping("/new")
     public ResponseEntity<Products> createProduct(
-            @ModelAttribute CreateProductDto createProductDto,
-            @RequestPart("file") MultipartFile file
+            @ModelAttribute CreateProductDto createProductDto
     ) {
-        try {
-            List<String> imageUrl = cloudinaryService.uploadImage(file);
-            createProductDto.setImageUrl(imageUrl.get(0) + " " + imageUrl.get(1));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload image", e);
-        }
         return ResponseEntity.ok(productService.createProduct(createProductDto));
     }
 
@@ -41,19 +34,11 @@ public class ProductController {
     public ResponseEntity<Products> updateProduct(
             @PathVariable("id") Long id,
             @ModelAttribute UpdateProductDto createProductDto,
-            @RequestPart("file") MultipartFile file
+            @RequestPart(value = "file", required = false) MultipartFile file
     ) {
         Products product = productService.findProductById(id);
-        try {
-            boolean isDeleted = cloudinaryService.deleteImage(product.getImageUrl().split(" ")[1]);
-            List<String> imageUrl = cloudinaryService.uploadImage(file);
-            createProductDto.setImageUrl(imageUrl.get(0) + " " + imageUrl.get(1));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload image");
-        }
         return ResponseEntity.ok(productService.updateProduct(id, createProductDto));
     }
-
 
     @GetMapping("/id/{id}")
     public ResponseEntity<Products> getProductById(@PathVariable("id") Long id) {
@@ -72,6 +57,15 @@ public class ProductController {
             @RequestParam(value = "limit", defaultValue = "10") int limit
     ) {
         return ResponseEntity.ok(productService.getAllProducts(page, limit));
+    }
+
+    @GetMapping("/brand/{brand}")
+    public ResponseEntity<PagedResponse<Products>> getProductsByBrand(
+            @PathVariable("brand") String brand,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) {
+        return ResponseEntity.ok(productService.getProductsByBrand(brand, page, limit));
     }
 
     @GetMapping("/category/{category}")

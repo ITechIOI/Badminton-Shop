@@ -12,6 +12,8 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
+import java.util.List;
+
 // Đoạn code này được sử dụng để tạo format chung cho API Response
 
 @RestControllerAdvice
@@ -37,6 +39,10 @@ public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
         }
 
         if (body instanceof ProductResponse) {
+            return body;
+        }
+
+        if (body instanceof List<?>) {
             return body;
         }
 

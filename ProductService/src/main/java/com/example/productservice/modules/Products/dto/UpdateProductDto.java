@@ -11,9 +11,11 @@ import lombok.Setter;
 @NoArgsConstructor
 public class UpdateProductDto {
     private String name;
+    private String brand;
     private String description;
     private Integer price;
     private String imageUrl;
+    private String videoUrl;
     private String available;
     private Integer quantity;
     private Long categoryId;

@@ -11,18 +11,13 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreateUserDto {
-    private String name;
-    private String avatar;
+    private String firstName;
+    private String lastName;
     private String gender;
-
-    @Email(message = "Invalid email format")
+    private String avatar;
+    private String phone;
     private String email;
     private String username;
-
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    private String roles;
     private String password;
-    private Long roleId;
-
-
 }

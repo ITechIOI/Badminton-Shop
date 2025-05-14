@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
     private final OrderService orderService;
 
+    // Khi gửi request tới request này, trên FE phải tự tính toán totalPrice trước khi gửi request
     @PostMapping("/new")
     public ResponseEntity<Orders> createOrder(@RequestBody CreateOrderDto createOrderDto) {
         return ResponseEntity.ok(orderService.createOrder(createOrderDto));

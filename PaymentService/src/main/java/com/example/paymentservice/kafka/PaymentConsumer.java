@@ -20,9 +20,10 @@ public class PaymentConsumer {
 
     @KafkaListener(topics = "order-cancel-events", groupId = "orderGroup")
     public void consumePaymentSuccess (OrderResponse orderResponse) {
+        System.out.println("Payment confirmation received in payment service: " + orderResponse);
 
         List<Payments> payments = paymentService.findPaymentByOrderId(orderResponse.id());
-        paymentService.refundPayment(payments.getFirst().getId());
+//        paymentService.refundPayment(payments.getFirst().getId());
 
         PaymentResponse paymentResponse = new PaymentResponse();
         paymentResponse.setPaymentMethod(payments.getFirst().getPaymentMethod());
@@ -31,13 +32,14 @@ public class PaymentConsumer {
         paymentResponse.setStatus("refunded");
         paymentResponse.setTransactionId(payments.getFirst().getTransactionId());
 
+        System.out.println("Payment created: " + paymentResponse + "\n");
+
         if (paymentService.refundPayment(payments.getFirst().getId())) {
             paymentProducer.sendRefundSuccess(paymentResponse);
         } else {
             paymentProducer.sendRollbackOrder(paymentResponse);
         }
 
-        log.info("Payment confirmation received: {}", orderResponse);
     }
 }
 

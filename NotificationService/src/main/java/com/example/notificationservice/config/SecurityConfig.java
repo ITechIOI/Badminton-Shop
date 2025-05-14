@@ -1,5 +1,6 @@
 package com.example.notificationservice.config;
 
+import com.example.notificationservice.utils.UnauthorizedException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -80,8 +81,9 @@ public class SecurityConfig {
 
             // Nếu request không có "X-Forwarded-For", có nghĩa là truy cập trực tiếp -> Chặn
             if (forwardedFor == null) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Must go through API Gateway");
-                return;
+                throw new UnauthorizedException("Access Denied: Must go through API Gateway");
+               // response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Must go through API Gateway");
+                // return;
             }
 
             filterChain.doFilter(request, response);

@@ -11,6 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UpdateOrderDetailDto {
     private Integer quantity;
+    private Integer price;  // giá hiện hành tại thời điểm mua
     private Long productId;
     private Long orderId;
 

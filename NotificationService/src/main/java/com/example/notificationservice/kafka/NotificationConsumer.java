@@ -23,6 +23,7 @@ public class NotificationConsumer {
 
     @KafkaListener(topics = "inventory-success-events", groupId = "productGroup")
     public void consumeOrderSuccess (PaymentResponse productResponse) {
+        System.out.println("Inventory success: {}" + productResponse);
         if (productResponse == null) {
             Notifications notifications = new Notifications();
             notifications.setOrderId(null);
@@ -42,7 +43,7 @@ public class NotificationConsumer {
             Notifications notification = notificationService.createNotification(newNotification);
         }
     }
-
+//
 //    @KafkaListener(topics = "inventory-failed-events", groupId = "orderGroup")
 //    public void consumeOrderFailed (OrderResponse orderResponse) {
 //        log.info("Order failed: {}", orderResponse);

@@ -1,9 +1,13 @@
 package com.example.orderservice.modules.Orders.dto;
 
+import com.example.orderservice.modules.OrderDetails.dto.CreateOrderDetailDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,6 +21,9 @@ public class CreateOrderDto {
     private String phone;
     private Long userId;
     private Long discountId;
+
+     // Không cần thêm thuôc tính orderId
+    private List<CreateOrderDetailDto> details = new ArrayList<>();
 
     public String toString() {
         return "CreateOrderDto(totalPrice=" + this.getTotalPrice() +

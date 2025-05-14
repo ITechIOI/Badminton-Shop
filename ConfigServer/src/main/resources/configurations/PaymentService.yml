@@ -9,16 +9,24 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:9098/realms/micro-service
+          jwk-set-uri: http://keycloak:9098/realms/micro-service/protocol/openid-connect/certs
+
   kafka:
     producer:
-      bootstrap-servers: localhost:9092
+      bootstrap-servers: kafka:9092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.type.mapping: paymentResponse:com.example.paymentservice.modules.payments.dto.PaymentResponse
 
     consumer:
-      bootstrap-servers: localhost:9092
+      bootstrap-servers: kafka:9092
       group-id: orderGroup
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -27,29 +35,15 @@ spring:
         spring.json.trusted.packages: "*"
         spring.json.type.mapping: orderResponse:com.example.paymentservice.modules.feign.OrderResponse
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: "http://localhost:9098/realms/micro-service"
-          jwk-set-uri: http://localhost:9098/realms/micro-service/protocol/openid-connect/certs
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-
 server:
   port: 8004
 
-paypal:
-  client:
-    id: AcbmqATxBNYSNscNEdozkx40CnBkjNSsNpwiF2vpvM-GccRXEUg3o2fCmssSGsWyk6klbEAm5AFaivNs
-    secret: EJ4g2fCwRj7YrjWyGG9CX2uqar1mugs7wyed4tDG2CzpxuhF7x5JUP2-BbZos-JYC4p3G-pkdH2RA8Nm
-  mode: sandbox
-  SUCCESS_URL: http://localhost:8004/payment/success
-  CANCEL_URL: http://localhost:8004/payment/cancel
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
 
-application:
-  config:
-    order-url: http://localhost:8222/orders/orders
+

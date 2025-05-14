@@ -22,19 +22,19 @@ public class CloudinaryController {
     @PostMapping("/upload")
     public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
-            List<String> imageUrl = cloudinaryService.uploadImage(file);
-            return ResponseEntity.ok(imageUrl.get(0) + "  " + imageUrl.get(1));
+            List<String> imageUrl = cloudinaryService.uploadMedia(file);
+            return ResponseEntity.ok(imageUrl.get(0) + " " + imageUrl.get(1));
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload image");
+            throw new RuntimeException("Failed to upload media");
         }
     }
 
     @PostMapping("/delete")
-    public ResponseEntity<String> deleteImage(@RequestParam("publicId") String publicId) {
-        if (cloudinaryService.deleteImage(publicId)) {
+    public ResponseEntity<String> deleteImage(@RequestParam("publicId") String publicId, @RequestParam("type") String type) {
+        if (cloudinaryService.deleteByType(publicId, type)) {
             return ResponseEntity.ok("Image deleted successfully");
         } else {
-            return ResponseEntity.ok("Failed to delete image");
+            return ResponseEntity.ok("Failed to delete media");
         }
     }
 }

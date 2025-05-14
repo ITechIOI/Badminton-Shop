@@ -2,7 +2,41 @@ spring:
   application:
     name: ProductService
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:http://config-server:8888
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        max-attempts: 10               # Số lần retry tối đa
+        initial-interval: 2000         # Thời gian chờ trước lần retry đầu tiên (ms)
+        multiplier: 1.5                # Hệ số nhân giữa các lần retry
+        max-interval: 10000
+
+  kafka:
+    producer:
+      bootstrap-servers: kafka:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.type.mapping: paymentResponse:com.example.productservice.modules.feign.Payments.PaymentResponse
+
+    consumer:
+      bootstrap-servers: kafka:9092
+      group-id: paymentGroup
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: paymentResponse:com.example.productservice.modules.feign.Payments.PaymentResponse
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
 
 logging:
   level:
@@ -10,3 +44,14 @@ logging:
   appender:
     logstash:
       destination: logstash:5000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka
+
+application:
+  config:
+    user-url: http://gateway:8222/users/users
+    order-details-url: http://gateway:8222/orders/order-details
+

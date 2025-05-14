@@ -34,8 +34,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // Cấu hình CORS nếu cần
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/**").hasRole("client_admin")
+//                        .requestMatchers("/users/**").hasRole("client_admin")
                         .requestMatchers("/users/users/id/**").permitAll()
+                        .requestMatchers("/users/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -55,6 +56,8 @@ public class SecurityConfig {
 
             Collection<GrantedAuthority> authorities = new ArrayList<>();
             Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
+
+            System.out.println("Realm role use: " + resourceAccess);
 
             if (resourceAccess != null && resourceAccess.containsKey("authservice")) {
                 Map<String, Object> authService = (Map<String, Object>) resourceAccess.get("authservice");

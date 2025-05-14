@@ -101,8 +101,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // Cấu hình CORS nếu cần
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/**").hasRole("client_admin")
-                        .requestMatchers("/users/users/id/**").permitAll()
+                        .requestMatchers("/products/**").hasRole("client_admin")
+                        .requestMatchers("/products/products/services/**").permitAll()
+                        .requestMatchers("/products/products/id/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

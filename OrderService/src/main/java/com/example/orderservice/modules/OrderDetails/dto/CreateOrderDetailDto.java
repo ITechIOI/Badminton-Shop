@@ -11,11 +11,13 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CreateOrderDetailDto {
     private Integer quantity;
+    private Integer price;  // giá hiện hành tại thời điểm mua
     private Long productId;
     private Long orderId;
 
     public String toString() {
         return "CreateOrderDetailDto(quantity=" + this.getQuantity() +
+                ", price=" + this.getPrice() +
                 ", productId=" + this.getProductId() +
                 ", orderId=" + this.getOrderId() + ")";
     }

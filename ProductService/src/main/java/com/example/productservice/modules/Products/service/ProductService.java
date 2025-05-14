@@ -50,9 +50,11 @@ public class ProductService {
         Products products = findProductById(id);
         return new ProductResponse(
                 products.getName(),
+                products.getBrand(),
                 products.getDescription(),
                 products.getPrice(),
                 products.getImageUrl(),
+                products.getVideoUrl(),
                 products.getAvailable(),
                 products.getQuantity(),
                 products.getCategory().getId()
@@ -62,6 +64,15 @@ public class ProductService {
     public PagedResponse<Products> getAllProducts(int page, int limit) {
         Pageable pageable = PageRequest.of(page, limit);
         Page<Products> products = productRepository.findAllProducts(pageable);
+        if (products.getContent().isEmpty()) {
+            throw new NotFoundException("No product found");
+        }
+        return new PagedResponse<>(products.getContent(), products.getTotalPages(), products.getTotalElements());
+    }
+
+    public PagedResponse<Products> getProductsByBrand(String brand, int page, int limit) {
+        Pageable pageable = PageRequest.of(page, limit);
+        Page<Products> products = productRepository.findProductsByBrand(brand, pageable);
         if (products.getContent().isEmpty()) {
             throw new NotFoundException("No product found");
         }

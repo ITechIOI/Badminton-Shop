@@ -2,12 +2,15 @@ package com.example.orderservice.modules.Reviews.controller;
 
 import com.example.orderservice.models.Reviews;
 import com.example.orderservice.modules.Reviews.dto.CreateReviewDto;
+import com.example.orderservice.modules.Reviews.dto.output.ProductRatingDto;
 import com.example.orderservice.modules.Reviews.service.ReviewService;
 import com.example.orderservice.utils.PagedResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/orders/reviews")
@@ -50,6 +53,22 @@ public class ReviewController {
             @RequestParam(value = "limit", defaultValue = "10") int limit
     ) {
         return ResponseEntity.ok(reviewService.getAllReviews(page, limit));
+    }
+
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<PagedResponse<Reviews>> getReviewByProductId(
+            @PathVariable("productId") Long productId,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) {
+        return ResponseEntity.ok(reviewService.findReviewsByProductId(productId, page, limit));
+    }
+
+    @GetMapping("/product/rating/{rating}")
+    public ResponseEntity<List<ProductRatingDto>> getReviewByProductIdAndRating(
+            @PathVariable(value = "rating") Integer rating
+    ) {
+        return ResponseEntity.ok(reviewService.findProductsByRatingThreshold(rating));
     }
 
     @DeleteMapping("{id}")

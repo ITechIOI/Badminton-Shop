@@ -54,7 +54,8 @@ public class NotificationService {
     public Notifications createNotification(CreateNotificationDto createNotification) {
 
         UserResponse userResponse = userClient.getUserById(createNotification.getUserId()).getBody();
-        System.out.println(userResponse);
+        System.out.println("User response: " + userResponse);
+        // System.out.println(userResponse);
         if (userResponse == null) {
             throw new IllegalArgumentException("User not found");
         }

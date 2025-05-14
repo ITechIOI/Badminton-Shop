@@ -12,17 +12,12 @@ import java.util.List;
 @Table(name = "roles")
 @Getter
 @Setter
-@AllArgsConstructor
 @Builder
 public class Roles extends AbstractModel {
 
     @NotBlank(message = "Role name is required")
     @Column(nullable = false)
     private String name;
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<Users> users;
 
     public Roles() {}
 

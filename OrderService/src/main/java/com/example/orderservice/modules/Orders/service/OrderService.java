@@ -5,9 +5,7 @@ import com.example.orderservice.models.Discounts;
 import com.example.orderservice.models.OrderDetails;
 import com.example.orderservice.models.Orders;
 import com.example.orderservice.modules.Discounts.service.DiscountService;
-import com.example.orderservice.modules.OrderDetails.dto.OrderDetailResponse;
-import com.example.orderservice.modules.OrderDetails.service.OrderDetailService;
-import com.example.orderservice.modules.OrderDetails.service.OrderDetailServiceImpl;
+import com.example.orderservice.modules.OrderDetails.repository.OrderDetailRepository;
 import com.example.orderservice.modules.Orders.dto.CreateOrderDto;
 import com.example.orderservice.modules.Orders.dto.OrderResponse;
 import com.example.orderservice.modules.Orders.dto.UpdateOrderDto;
@@ -18,10 +16,7 @@ import com.example.orderservice.utils.NotFoundException;
 import com.example.orderservice.utils.NullAwareBeanUtilsBean;
 import com.example.orderservice.utils.PagedResponse;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.apache.commons.beanutils.BeanUtilsBean;
-import org.springframework.beans.BeanUtils;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +31,7 @@ public class OrderService {
     private final DiscountService discountService;
     private final UserClient userClient;
     private final OrderProducer orderProducer;
+    private final OrderDetailRepository orderDetailRepository;
 
     public OrderResponse cancelOrder(Long id) {
         Orders orders = orderRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Order not found"));
@@ -93,7 +89,6 @@ public class OrderService {
         order.setDiscount(discount);
         order.setUserId(createOrderDto.getUserId());
         order.setTotalPrice(createOrderDto.getTotalPrice());
-        order.setTotalPrice(createOrderDto.getTotalPrice());
         order.setAddress(createOrderDto.getAddress());
         order.setPhone(createOrderDto.getPhone());
         order.setStatus(createOrderDto.getStatus());
@@ -108,9 +103,20 @@ public class OrderService {
                 order.getDiscount().getId()
         );
 
+        Orders savedOrder = orderRepository.save(order);
+        for (int i = 0; i < createOrderDto.getDetails().size(); i++) {
+            OrderDetails item = new OrderDetails();
+            item.setOrder(savedOrder);
+            item.setProudctId(createOrderDto.getDetails().get(i).getProductId());
+            item.setQuantity(createOrderDto.getDetails().get(i).getQuantity());
+            item.setPrice(createOrderDto.getDetails().get(i).getPrice());
+            OrderDetails savedOrderDetail = orderDetailRepository.save(item);
+            System.out.println("Order detail created: " + savedOrderDetail);
+        }
+
         orderProducer.sendOrderConfirmation(response);
 
-        return orderRepository.save(order);
+        return savedOrder;
     }
 
     public OrderResponse findOrderByIdForServices(Long id) {

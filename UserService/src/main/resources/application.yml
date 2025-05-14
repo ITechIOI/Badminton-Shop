@@ -1,12 +1,77 @@
+# Phần cấu hình ban đầu
+#spring:
+#    application:
+#        name: UserService
+#    config:
+#        # import: optional:configserver:http://localhost:8888
+#        import: optional:configserver:http://localhost:8888
+#
+#logging:
+#    level:
+#        root: INFO
+#    appender:
+#        logstash:
+#            destination: logstash:5000
+
 spring:
-    application:
-        name: UserService
-    config:
-        import: optional:configserver:http://localhost:8888
+  application:
+    name: USERSERVICE # Đảm bảo tên ứng dụng khớp với Gateway và Eureka
+  config:
+    import: optional:configserver:http://config-server:8888
+  datasource:
+    url: jdbc:mysql://userservice-nguyenloan2000hbt-d1f9.h.aivencloud.com:14850/userservice?sslMode=REQUIRED
+    username: avnadmin
+    password: AVNS_mnCRriUO6Ub4Xcbz81e
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/micro-service
+          jwk-set-uri: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka
+    instance:
+      prefer-ip-address: true # Đảm bảo sử dụng địa chỉ IP để tránh lỗi DNS
+      lease-renewal-interval-in-seconds: 10
+      lease-expiration-duration-in-seconds: 30
 
 logging:
-    level:
-        root: INFO
-    appender:
-        logstash:
-            destination: logstash:5000
+  level:
+    root: INFO
+  appender:
+    logstash:
+      destination: logstash:5000
+
+keycloak:
+  admin:
+    server-url: http://keycloak:8080           # trùng với port host
+    realm: master                          # realm chứa admin-cli
+    client-id: admin-cli
+    username: admin
+    password: admin
+  realm: micro-service
+
+server:
+  port: 8001
+
+cloudinary:
+  cloud-name: daxxuqogj
+  api-key: 436316462347214
+  api-secret: 5oIMlaDECvys_-OGGZt-Irk8_Hw

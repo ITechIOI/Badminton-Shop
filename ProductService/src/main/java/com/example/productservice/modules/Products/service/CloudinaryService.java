@@ -16,9 +16,18 @@ import java.util.Map;
 public class CloudinaryService {
     private final Cloudinary cloudinary;
 
-    public List<String> uploadImage(MultipartFile file) throws IOException {
-        Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
-                ObjectUtils.asMap("folder", "uploads"));
+    public List<String> uploadMedia(MultipartFile file) throws IOException {
+        String contentType = file.getContentType(); // e.g., video/mp4, image/png
+
+        String resourceType = "auto"; // Let Cloudinary decide
+
+        Map uploadResult = cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap(
+                        "folder", "uploads",
+                        "resource_type", resourceType
+                )
+        );
 
         String secureUrl = uploadResult.get("secure_url").toString();
         String publicId = uploadResult.get("public_id").toString();
@@ -29,13 +38,16 @@ public class CloudinaryService {
         return list;
     }
 
-    public boolean deleteImage(String publicId) {
+    public boolean deleteByType(String publicId, String resourceType) {
         try {
-            Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.asMap(
+                    "resource_type", resourceType
+            ));
             return "ok".equals(result.get("result"));
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
+
 }

@@ -23,23 +23,27 @@ public class ProductConsumer {
 
     @KafkaListener(topics = "refund-success-topic", groupId = "paymentGroup")
     public void consumeOrderSuccess (PaymentResponse message) {
-        try {
-            List<OrderDetailResponse> orderDetails = orderDetailClient.getAllOrderDetails(message.getOrderId()).getBody();
-            for (OrderDetailResponse orderDetail : orderDetails) {
-                Integer originalStock = productService.findProductById(orderDetail.productId()).getQuantity() ;
-                UpdateProductDto updateProductDto = new UpdateProductDto();
-                updateProductDto.setQuantity(originalStock + orderDetail.quantity());
-                Products product = productService.updateProduct(orderDetail.productId(), updateProductDto);
-                productProducer.sendUpdateInventorySuccess(message);
-            }
-        } catch (Exception e) {
-            productProducer.sendUpdateInventorySuccess(null);
+        System.out.println("Refund confirmation received: {}" + message);
+//        try {
+//            List<OrderDetailResponse> orderDetails = orderDetailClient.getAllOrderDetails(message.getOrderId()).getBody();
+//            for (OrderDetailResponse orderDetail : orderDetails) {
+//                Integer originalStock = productService.findProductById(orderDetail.productId()).getQuantity() ;
+//                UpdateProductDto updateProductDto = new UpdateProductDto();
+//                updateProductDto.setQuantity(originalStock + orderDetail.quantity());
+//                Products product = productService.updateProduct(orderDetail.productId(), updateProductDto);
+//                productProducer.sendUpdateInventorySuccess(message);
+//            }
+//        } catch (Exception e) {
+//            productProducer.sendUpdateInventorySuccess(null);
+//        }
+        List<OrderDetailResponse> orderDetails = orderDetailClient.getAllOrderDetails(message.getOrderId()).getBody();
+        System.out.println("Order details service: " + orderDetails);
+        for (OrderDetailResponse orderDetail : orderDetails) {
+            Integer originalStock = productService.findProductById(orderDetail.productId()).getQuantity() ;
+            UpdateProductDto updateProductDto = new UpdateProductDto();
+            updateProductDto.setQuantity(originalStock + orderDetail.quantity());
+            Products product = productService.updateProduct(orderDetail.productId(), updateProductDto);
+            productProducer.sendUpdateInventorySuccess(message);
         }
     }
 }
-
-
-//@KafkaListener(topics = "order-cancel-events", groupId = "orderGroup")
-//public void consumePaymentSuccess (OrderResponse orderResponse) {
-//    log.info("Payment confirmation received: {}", orderResponse);
-//}

@@ -13,6 +13,9 @@ public class OrderDetails extends AbstractModel {
     private Integer quantity;
 
     @Column(nullable = true)
+    private Integer price;
+
+    @Column(nullable = true)
     private Long proudctId;
 
     @ManyToOne()

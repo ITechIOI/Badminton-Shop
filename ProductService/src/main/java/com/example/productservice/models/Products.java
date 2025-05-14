@@ -17,6 +17,9 @@ public class Products extends AbstractModel {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private String brand;
+
     @Column(nullable = true)
     private String description;
 
@@ -25,6 +28,9 @@ public class Products extends AbstractModel {
 
     @Column(nullable = true)
     private String imageUrl;
+
+    @Column(nullable = true)
+    private String videoUrl;
 
     @Column(nullable = true)
     private Integer quantity;
@@ -56,7 +62,6 @@ public class Products extends AbstractModel {
                 ", quantity=" + quantity +
                 ", available='" + available + '\'' +
                 ", category=" + category +
-                ", grnDetails=" + grnDetails +
                 '}';
     }
 

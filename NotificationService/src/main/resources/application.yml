@@ -2,7 +2,16 @@ spring:
   application:
     name: NotificationService
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:http://config-server:8888
+
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        max-attempts: 10 # Số lần retry tối đa
+        initial-interval: 2000 # Thời gian chờ trước lần retry đầu tiên (ms)
+        multiplier: 1.5 # Hệ số nhân giữa các lần retry
+        max-interval: 10000
 
 logging:
   level:
@@ -11,3 +20,12 @@ logging:
     logstash:
       destination: logstash:5000
 
+application:
+  config:
+    user-url: http://gateway:8222/users/users
+    order-url: http://gateway:8222/orders/orders
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka

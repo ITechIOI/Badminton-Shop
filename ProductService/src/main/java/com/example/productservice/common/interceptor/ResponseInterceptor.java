@@ -34,6 +34,10 @@ public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
             return body;
         }
 
+        if (body instanceof String) {
+            return body;
+        }
+
         if (body instanceof ResponseEntity<?>) {
             ResponseEntity<?> responseEntity = (ResponseEntity<?>) body;
             return Response.error(responseEntity.getStatusCode().value(), "Request Error");

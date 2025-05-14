@@ -25,6 +25,9 @@ public interface ProductRepository extends JpaRepository<Products, Long> {
     @Query("SELECT u FROM Products u WHERE u.category.id = :categoryId AND u.deletedAt IS NULL")
     public Page<Products> findByCategoryId(Long categoryId, Pageable pageable);
 
+    @Query("SELECT u FROM Products u WHERE u.brand = :brand AND u.deletedAt IS NULL")
+    public Page<Products> findProductsByBrand(String brand, Pageable pageable);
+
     @Modifying
     @Transactional
     @Query("UPDATE Products u SET u.deletedAt = CURRENT_TIMESTAMP WHERE u.id = :id")

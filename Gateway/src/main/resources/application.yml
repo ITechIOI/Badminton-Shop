@@ -1,11 +1,78 @@
+#spring:
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: "http://localhost:9098/realms/micro-service"
+#          jwk-set-uri: http://localhost:9098/realms/micro-service/protocol/openid-connect/certs
+#  config:
+#    import: optional:configserver:http://localhost:8888
+#  application:
+#    name: GatewayService
+
+server:
+  port: 8222
+
 spring:
+
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: "http://localhost:9098/realms/micro-service"
-          jwk-set-uri: http://localhost:9098/realms/micro-service/protocol/openid-connect/certs
+          issuer-uri: http://keycloak:8080/realms/micro-service
+          jwk-set-uri: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:http://config-server:8888
   application:
     name: GatewayService
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: UserService
+          uri: lb:http://USERSERVICE
+#          uri: lb:http://588dbad3f74a:UserService:8001
+          predicates:
+            - Path=/users/**
+        - id: ProductService
+          uri: lb:http://PRODUCTSERVICE
+          predicates:
+            - Path=/products/**
+        - id: OrderService
+          uri: lb:http://ORDERSERVICE
+          predicates:
+            - Path=/orders/**
+        - id: PaymentService
+          uri: lb:http://PAYMENTSERVICE
+          predicates:
+            - Path=/payment/**
+        - id: NotificationService
+          uri: lb:http://NOTIFICATIONSERVICE
+          predicates:
+            - Path=/notifications/**
+        - id: ReportService
+          uri: lb:http://REPORTSERVICE
+          predicates:
+            - Path=/reports/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      #            endpoint: http://zipkin:9411/zipkin/
+      endpoint: http://zipkin:9411/api/v2/spans
+
+logging:
+  level:
+    root: DEBUG
+    org.springframework.security: DEBUG
+    com.example.gateway.security: DEBUG
