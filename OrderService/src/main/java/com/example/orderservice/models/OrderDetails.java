@@ -21,4 +21,13 @@ public class OrderDetails extends AbstractModel {
     @ManyToOne()
     @JoinColumn(name = "orderId", nullable = true)
     private Orders order;
+
+    public String toString() {
+        return "OrderDetails{" +
+                "quantity=" + quantity +
+                ", price=" + price +
+                ", proudctId=" + proudctId +
+                ", order=" + order +
+                '}';
+    }
 }

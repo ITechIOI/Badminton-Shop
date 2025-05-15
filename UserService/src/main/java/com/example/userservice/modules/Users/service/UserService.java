@@ -184,6 +184,9 @@ public class UserService {
                 String phone  = attributes.getOrDefault("phone",  Collections.emptyList()).stream().findFirst().orElse(null);
 
                 Users userInMySQL = userRepository.findOneByKeycloakId(user.getId());
+                if (userInMySQL == null) {
+                    throw new NotFoundException("User not found in MySQL");
+                }
                 Long id = (userInMySQL != null) ? userInMySQL.getId() : null;
 
                 return new UserResponse(
@@ -214,6 +217,10 @@ public class UserService {
     public UserResponse getUserById(Long userId) {
         // 1. Lấy user trong MySQL
         Users user = userRepository.findOneById(userId);
+        if (user == null) {
+            throw new NotFoundException("User not found in MySQL");
+        }
+
         String keycloakId = user.getKeycloakId();
 
         System.out.println("Keycloak ID: " + keycloakId);

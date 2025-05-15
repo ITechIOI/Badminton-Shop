@@ -53,15 +53,16 @@ public class NotificationService {
 
     public Notifications createNotification(CreateNotificationDto createNotification) {
 
-        UserResponse userResponse = userClient.getUserById(createNotification.getUserId()).getBody();
-        System.out.println("User response: " + userResponse);
-        // System.out.println(userResponse);
-        if (userResponse == null) {
-            throw new IllegalArgumentException("User not found");
+        UserResponse userResponse;
+        try {
+            userResponse = userClient.getUserById(createNotification.getUserId()).getBody();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("User not found with id: " + createNotification.getUserId());
         }
-        OrderResponse orderResponse = orderClient.getOrderById(createNotification.getOrderId()).getBody();
-        if (orderResponse == null) {
-            throw new IllegalArgumentException("Order not found");
+        try {
+            OrderResponse orderResponse = orderClient.getOrderById(createNotification.getOrderId()).getBody();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Order not found with id: " + createNotification.getOrderId());
         }
 
         Notifications notification = new Notifications();

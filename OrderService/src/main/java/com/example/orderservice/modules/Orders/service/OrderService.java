@@ -10,11 +10,14 @@ import com.example.orderservice.modules.Orders.dto.CreateOrderDto;
 import com.example.orderservice.modules.Orders.dto.OrderResponse;
 import com.example.orderservice.modules.Orders.dto.UpdateOrderDto;
 import com.example.orderservice.modules.Orders.repository.OrderRepository;
+import com.example.orderservice.modules.feign.ProductFeign.ProductClient;
+import com.example.orderservice.modules.feign.ProductFeign.ProductResponse;
 import com.example.orderservice.modules.feign.UserFeign.UserClient;
 import com.example.orderservice.modules.feign.UserFeign.UserResponse;
 import com.example.orderservice.utils.NotFoundException;
 import com.example.orderservice.utils.NullAwareBeanUtilsBean;
 import com.example.orderservice.utils.PagedResponse;
+import feign.FeignException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.data.domain.Page;
@@ -32,6 +35,7 @@ public class OrderService {
     private final UserClient userClient;
     private final OrderProducer orderProducer;
     private final OrderDetailRepository orderDetailRepository;
+    private final ProductClient productClient;
 
     public OrderResponse cancelOrder(Long id) {
         Orders orders = orderRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Order not found"));
@@ -56,8 +60,12 @@ public class OrderService {
     }
 
     public UserResponse getUserInformationOrderId(Long id) {
-        Orders orders = orderRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Order not found"));
-        return userClient.getUserById(orders.getUserId()).getBody();
+        try {
+            Orders orders = orderRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Order not found"));
+            return userClient.getUserById(orders.getUserId()).getBody();
+        } catch (FeignException.FeignClientException e) {
+            throw new NotFoundException("User not found with ID: " + id);
+        }
     }
 
     public OrderResponse undoCancelOrder(Long id)  {
@@ -84,7 +92,11 @@ public class OrderService {
 
     public Orders createOrder(CreateOrderDto createOrderDto) {
         Discounts discount = discountService.findDiscountById(createOrderDto.getDiscountId());
-        UserResponse userResponse = userClient.getUserById(createOrderDto.getUserId()).getBody();
+        try {
+            UserResponse userResponse = userClient.getUserById(createOrderDto.getUserId()).getBody();
+        } catch (FeignException.FeignClientException e) {
+            throw new NotFoundException("User not found with ID: " + createOrderDto.getUserId());
+        }
         Orders order = new Orders();
         order.setDiscount(discount);
         order.setUserId(createOrderDto.getUserId());
@@ -107,11 +119,18 @@ public class OrderService {
         for (int i = 0; i < createOrderDto.getDetails().size(); i++) {
             OrderDetails item = new OrderDetails();
             item.setOrder(savedOrder);
+            ProductResponse productResponse;
+            try {
+                productResponse = productClient.getProductById(createOrderDto.getDetails().get(i).getProductId()).getBody();
+                System.out.println("Product response: " + productResponse);
+            } catch (FeignException.FeignClientException e) {
+                throw new NotFoundException("Product not found with ID: " + createOrderDto.getDetails().get(i).getProductId());
+            }
             item.setProudctId(createOrderDto.getDetails().get(i).getProductId());
             item.setQuantity(createOrderDto.getDetails().get(i).getQuantity());
-            item.setPrice(createOrderDto.getDetails().get(i).getPrice());
+            item.setPrice(productResponse.price());
             OrderDetails savedOrderDetail = orderDetailRepository.save(item);
-            System.out.println("Order detail created: " + savedOrderDetail);
+            System.out.println("Order detail created: " + savedOrderDetail.toString());
         }
 
         orderProducer.sendOrderConfirmation(response);
@@ -189,7 +208,11 @@ public class OrderService {
             throw new RuntimeException("Error copying properties", e);
         }
         if (updateOrderDto.getUserId() != null) {
-            UserResponse userResponse = userClient.getUserById(updateOrderDto.getUserId()).getBody();
+            try {
+                UserResponse userResponse = userClient.getUserById(updateOrderDto.getUserId()).getBody();
+            } catch (FeignException.FeignClientException e) {
+                throw new NotFoundException("User not found with ID: " + updateOrderDto.getUserId());
+            }
         }
         return orderRepository.save(order);
     }

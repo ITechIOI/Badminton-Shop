@@ -15,6 +15,7 @@ import com.example.orderservice.modules.feign.UserFeign.UserResponse;
 import com.example.orderservice.utils.NotFoundException;
 import com.example.orderservice.utils.NullAwareBeanUtilsBean;
 import com.example.orderservice.utils.PagedResponse;
+import feign.FeignException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.data.domain.Page;
@@ -34,7 +35,12 @@ public class OrderDetailService implements OrderDetailServiceInterface {
 
     public OrderDetails createDetails(CreateOrderDetailDto createOrderDetailDto) {
         OrderDetails orderDetails = new OrderDetails();
-        ProductResponse product = productClient.getProductById(createOrderDetailDto.getProductId()).getBody();
+        ProductResponse product;
+        try {
+            product = productClient.getProductById(createOrderDetailDto.getProductId()).getBody();
+        } catch (Exception e) {
+            throw new NotFoundException("Product not found with id: " + createOrderDetailDto.getProductId());
+        }
         orderDetails.setProudctId(createOrderDetailDto.getProductId());
         orderDetails.setQuantity(createOrderDetailDto.getQuantity());
         orderDetails.setPrice(product.price());
@@ -59,7 +65,12 @@ public class OrderDetailService implements OrderDetailServiceInterface {
     }
 
     public PagedResponse<OrderDetails> findDetailsByProductId(Long productId, int page, int limit) {
-        ProductResponse product = productClient.getProductById(productId).getBody();
+        ProductResponse product;
+        try {
+            product = productClient.getProductById(productId).getBody();
+        } catch (FeignException.FeignClientException e) {
+            throw new NotFoundException("Product not found with id: " + productId);
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<OrderDetails> orderDetails = orderRepository.findOrderDetailsByProductId(productId, pageable);
         if (orderDetails.getContent().isEmpty()) {
@@ -115,7 +126,11 @@ public class OrderDetailService implements OrderDetailServiceInterface {
             orderDetails.setOrder(order);
         }
         if (updateOrderDetailDto.getProductId() != null) {
-            ProductResponse product = productClient.getProductById(updateOrderDetailDto.getProductId()).getBody();
+            try {
+                ProductResponse product = productClient.getProductById(updateOrderDetailDto.getProductId()).getBody();
+            } catch (FeignException.FeignClientException e) {
+                throw new NotFoundException("Product not found with id: " + updateOrderDetailDto.getProductId());
+            }
         }
         if (updateOrderDetailDto.getPrice() != null) {
             orderDetails.setPrice(updateOrderDetailDto.getPrice());

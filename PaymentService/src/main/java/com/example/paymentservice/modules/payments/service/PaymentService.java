@@ -3,11 +3,11 @@ package com.example.paymentservice.modules.payments.service;
 import com.example.paymentservice.models.Payments;
 import com.example.paymentservice.modules.feign.OrderClient;
 import com.example.paymentservice.modules.feign.OrderResponse;
-import com.example.paymentservice.modules.payments.dto.CreatePaymentDto;
 import com.example.paymentservice.modules.payments.dto.UpdatePaymentDto;
 import com.example.paymentservice.modules.payments.repository.PaymentRepository;
 import com.example.paymentservice.utils.NullAwareBeanUtilsBean;
 import com.example.paymentservice.utils.PagedResponse;
+import feign.FeignException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.data.domain.Page;
@@ -25,11 +25,12 @@ public class PaymentService {
 
     public Payments createPayment(Payments payments) {
         System.out.println("Id of order" + payments.getOrderId());
-        OrderResponse order = orderClient.getOrderById(payments.getOrderId()).getBody();
-
-        if (order == null) {
-            throw new RuntimeException("Order not found");
+        try {
+            OrderResponse order = orderClient.getOrderById(payments.getOrderId()).getBody();
+        } catch (FeignException.FeignClientException e) {
+            throw new RuntimeException("Order not found with id: " + payments.getOrderId());
         }
+
         return paymentRepository.save(payments);
     }
 
@@ -59,9 +60,10 @@ public class PaymentService {
         }
         System.out.println("Order id is not null" + updatePaymentDto.getOrderId());
         if (updatePaymentDto.getOrderId() != null) {
-            OrderResponse order = orderClient.getOrderById(updatePaymentDto.getOrderId()).getBody();
-            if (order == null) {
-                throw new RuntimeException("Order not found");
+            try {
+                OrderResponse order = orderClient.getOrderById(updatePaymentDto.getOrderId()).getBody();
+            } catch (FeignException.FeignClientException e) {
+                throw new RuntimeException("Order not found with id: " + updatePaymentDto.getOrderId());
             }
             payment.setOrderId(updatePaymentDto.getOrderId());
         }
