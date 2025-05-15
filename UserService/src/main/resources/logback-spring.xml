@@ -2,7 +2,9 @@
     <!-- Appender gửi log đến Logstash -->
     <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
         <destination>host.docker.internal:5000</destination>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"service":"user-service"}</customFields>
+        </encoder>
     </appender>
 
     <!-- Appender hiển thị log trên console với màu sắc -->
