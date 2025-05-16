@@ -9,7 +9,17 @@
         <outputRelativeToContentRoot value="true" />
         <module name="gateway" />
       </profile>
-      <profile name="Annotation profile for UserService" enabled="true">
+      <profile name="Annotation profile for ConfigServer" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
+        </processorPath>
+        <module name="ConfigServer" />
+      </profile>
+      <profile name="Annotation profile for NotificationService" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -23,16 +33,6 @@
         <module name="NotificationService" />
         <module name="OrderService" />
         <module name="PaymentService" />
-      </profile>
-      <profile name="Annotation profile for ConfigServer" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
-        </processorPath>
-        <module name="ConfigServer" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

@@ -1,5 +1,6 @@
 package com.example.userservice.common.interceptor;
 
+import com.example.userservice.modules.Subscriptions.dto.SubscriptionResponse;
 import com.example.userservice.modules.Users.dto.UserResponse;
 import com.example.userservice.utils.Response;
 import org.springframework.core.MethodParameter;
@@ -31,6 +32,10 @@ public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
         }
 
         if (body instanceof UserResponse) {
+            return body;
+        }
+
+        if (body instanceof SubscriptionResponse) {
             return body;
         }
 

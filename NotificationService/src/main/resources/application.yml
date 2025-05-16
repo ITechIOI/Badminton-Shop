@@ -22,10 +22,17 @@ logging:
 
 application:
   config:
-    user-url: http://gateway:8222/users/users
+    user-url: http://gateway:8222/users/
     order-url: http://gateway:8222/orders/orders
 
 eureka:
   client:
     service-url:
       defaultZone: http://discovery-server:8761/eureka
+
+push:
+  vapid:
+    public-key: BOJ494ZGAa4HcRV3eoaJmnRjMKx208iXeolTXCb3m8Q6lbXuYimDBHz71M_fVZuKe_ecjsm1grUmPFaw78CaDug
+    private-key: _qTY-2EeuQ_i64uuyTMK_OPPfch13Y3ZU6Nk0oM71WU
+    subject: mailto:nguyenloan2000hbt@gmail.com
+

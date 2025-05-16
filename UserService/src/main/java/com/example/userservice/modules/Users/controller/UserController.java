@@ -47,10 +47,18 @@ public class UserController {
 
     // Phương thức này được dùng để lấy thông tin của người dùng thông qua jwt
     @GetMapping("profile")
-    public UserResponse getProfile(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<UserResponse> getProfile(@AuthenticationPrincipal Jwt jwt) {
         // Lấy keycloakId từ claim "sub"
         String keycloakId = jwt.getClaim("sub");
-        return userService.getUserByKeycloakId(keycloakId);
+        return ResponseEntity.ok(userService.getUserByKeycloakId(keycloakId));
+    }
+
+    @GetMapping("/keycloakId/{keycloakId}")
+    public ResponseEntity<UserResponse> getUserByKeycloakId(
+            @PathVariable String keycloakId
+    ) {
+        // Lấy keycloakId từ claim "sub"
+        return ResponseEntity.ok(userService.getUserByKeycloakId(keycloakId));
     }
 
     @PutMapping()

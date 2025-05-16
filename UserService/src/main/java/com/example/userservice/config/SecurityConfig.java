@@ -1,5 +1,6 @@
 package com.example.userservice.config;
 
+import com.example.userservice.utils.UnauthorizedException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,12 +31,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults()) // Cấu hình CORS nếu cần
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
                 .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/users/**").hasRole("client_admin")
-                        .requestMatchers("/users/users/id/**").permitAll()
                         .requestMatchers("/users/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -57,8 +56,6 @@ public class SecurityConfig {
             Collection<GrantedAuthority> authorities = new ArrayList<>();
             Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
 
-            System.out.println("Realm role use: " + resourceAccess);
-
             if (resourceAccess != null && resourceAccess.containsKey("authservice")) {
                 Map<String, Object> authService = (Map<String, Object>) resourceAccess.get("authservice");
                 if (authService.containsKey("roles")) {
@@ -79,15 +76,23 @@ public class SecurityConfig {
         @Override
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                 throws ServletException, IOException {
-            String forwardedFor = request.getHeader("X-Forwarded-For");
-
-            // Nếu request không có "X-Forwarded-For", có nghĩa là truy cập trực tiếp -> Chặn
-            if (forwardedFor == null) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Must go through API Gateway");
+            // 💡 Cho phép CORS preflight request (OPTIONS) đi qua
+            if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+                response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+                response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+                response.setHeader("Access-Control-Allow-Headers", "*");
+                response.setHeader("Access-Control-Allow-Credentials", "true");
+                response.setStatus(HttpServletResponse.SC_OK);
                 return;
+            }
+
+            String forwardedFor = request.getHeader("X-Forwarded-For");
+            if (forwardedFor == null) {
+                throw new UnauthorizedException("Access Denied: Must go through API Gateway");
             }
 
             filterChain.doFilter(request, response);
         }
+
     }
 }

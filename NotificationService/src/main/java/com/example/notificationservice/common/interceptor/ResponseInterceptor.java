@@ -1,5 +1,6 @@
 package com.example.notificationservice.common.interceptor;
 
+import com.example.notificationservice.modules.feign.Subscriptions.SubscriptionResponse;
 import com.example.notificationservice.modules.feign.Users.UserResponse;
 import com.example.notificationservice.utils.Response;
 import org.springframework.core.MethodParameter;
@@ -38,6 +39,10 @@ public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
         }
 
         if (body instanceof UserResponse) {
+            return body;
+        }
+
+        if (body instanceof SubscriptionResponse) {
             return body;
         }
 

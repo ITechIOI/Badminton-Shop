@@ -1,72 +1,6 @@
 package com.example.productservice.config;
 
-
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.config.Customizer;
-//import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-//import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-//import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-//import org.springframework.security.core.GrantedAuthority;
-//import org.springframework.security.core.authority.SimpleGrantedAuthority;
-//import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-//import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-//import org.springframework.security.web.SecurityFilterChain;
-//import org.springframework.security.config.http.SessionCreationPolicy;
-//
-//import java.util.ArrayList;
-//import java.util.Collection;
-//import java.util.List;
-//import java.util.Map;
-//
-//@Configuration
-//@EnableWebSecurity
-//@EnableMethodSecurity
-//public class SecurityConfig {
-//
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(csrf -> csrf.disable())
-//                .cors(Customizer.withDefaults()) // Cấu hình CORS nếu cần
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/users/**").hasRole("client_admin")
-//                        .anyRequest().authenticated()
-//                )
-//                .oauth2ResourceServer(oauth2 -> oauth2
-//                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-//                );
-//
-//        return http.build();
-//    }
-//
-//    private JwtAuthenticationConverter jwtAuthenticationConverter() {
-//        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-//        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-//            JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-//            authoritiesConverter.setAuthorityPrefix("ROLE_"); // Thêm ROLE_ để tương thích với Spring Security
-//
-//            // Lấy danh sách quyền từ "resource_access.authservice.roles"
-//            Collection<GrantedAuthority> authorities = new ArrayList<>();
-//            Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
-//
-//            if (resourceAccess != null && resourceAccess.containsKey("authservice")) {
-//                Map<String, Object> authService = (Map<String, Object>) resourceAccess.get("authservice");
-//                if (authService.containsKey("roles")) {
-//                    List<String> roles = (List<String>) authService.get("roles");
-//                    roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role)));
-//                }
-//            }
-//
-//            return authorities;
-//        });
-//        return converter;
-//    }
-//}
-
-
-
+import com.example.productservice.utils.UnauthorizedException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -97,13 +31,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults()) // Cấu hình CORS nếu cần
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/products/**").hasRole("client_admin")
-                        .requestMatchers("/products/products/services/**").permitAll()
-                        .requestMatchers("/products/products/id/**").permitAll()
+                        .requestMatchers("/products/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -144,15 +76,23 @@ public class SecurityConfig {
         @Override
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                 throws ServletException, IOException {
-            String forwardedFor = request.getHeader("X-Forwarded-For");
-
-            // Nếu request không có "X-Forwarded-For", có nghĩa là truy cập trực tiếp -> Chặn
-            if (forwardedFor == null) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Must go through API Gateway");
+            // 💡 Cho phép CORS preflight request (OPTIONS) đi qua
+            if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+                response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+                response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+                response.setHeader("Access-Control-Allow-Headers", "*");
+                response.setHeader("Access-Control-Allow-Credentials", "true");
+                response.setStatus(HttpServletResponse.SC_OK);
                 return;
+            }
+
+            String forwardedFor = request.getHeader("X-Forwarded-For");
+            if (forwardedFor == null) {
+                throw new UnauthorizedException("Access Denied: Must go through API Gateway");
             }
 
             filterChain.doFilter(request, response);
         }
+
     }
 }

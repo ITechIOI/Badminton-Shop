@@ -1,8 +1,11 @@
 package com.example.userservice.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -39,6 +42,10 @@ public class Users extends AbstractModel {
 
     @Column(nullable = false)
     private String keycloakId;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Subscriptions> subscriptions;
 
     @Override
     public String toString() {

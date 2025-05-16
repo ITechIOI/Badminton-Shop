@@ -42,9 +42,14 @@ public class Products extends AbstractModel {
     @JoinColumn(name = "category_id", nullable = false)
     private Categories category;
 
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<GRN_Details> grnDetails;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Flash_Sale_Details> flashSaleDetails;
 
     public Products() {}
 

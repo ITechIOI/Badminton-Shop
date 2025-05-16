@@ -44,6 +44,22 @@ public class UserService {
         return keycloak.realm(realm);
     }
 
+    public Users findRawByKeycloakId(String keycloakId) {
+        Users user = userRepository.findOneByKeycloakId(keycloakId);
+        if (user == null) {
+            throw new NotFoundException("User not found in MySQL");
+        }
+        return user;
+    }
+
+    public Users findRawById(Long id) {
+        Users user = userRepository.findOneById(id);
+        if (user == null) {
+            throw new NotFoundException("User not found in MySQL");
+        }
+        return user;
+    }
+
     public Users createUser(CreateUserDto dto) {
         // 1. Tạo UserRepresentation như bạn đã làm
         UserRepresentation userRep = new UserRepresentation();
