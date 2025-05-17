@@ -4,6 +4,7 @@ import com.example.orderservice.models.Orders;
 import com.example.orderservice.modules.Orders.dto.CreateOrderDto;
 import com.example.orderservice.modules.Orders.dto.OrderResponse;
 import com.example.orderservice.modules.Orders.dto.UpdateOrderDto;
+import com.example.orderservice.modules.Orders.dto.output.OrderByDateDto;
 import com.example.orderservice.modules.Orders.service.OrderService;
 import com.example.orderservice.modules.feign.UserFeign.UserResponse;
 import com.example.orderservice.utils.PagedResponse;
@@ -79,6 +80,17 @@ public class OrderController {
     @GetMapping("/service/user/{orderId}")
     public ResponseEntity<UserResponse> getUserInformationOrderId(@PathVariable("orderId") Long orderId) {
         return ResponseEntity.ok(orderService.getUserInformationOrderId(orderId));
+    }
+
+    @GetMapping("order-statistis")
+    public ResponseEntity<PagedResponse<OrderByDateDto>> getOrderStatistics(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month,
+            @RequestParam(value = "day", required = false) Integer day,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) {
+        return ResponseEntity.ok(orderService.orderStatisticsByTime(year, month, day, page, limit));
     }
 
 }

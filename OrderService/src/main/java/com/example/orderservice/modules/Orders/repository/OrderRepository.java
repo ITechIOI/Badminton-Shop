@@ -29,6 +29,18 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
     @Query("SELECT u FROM Orders u WHERE u.deletedAt IS NULL")
     public Page<Orders> findAllOrders(Pageable pageable);
 
+    // Tìm kiếm các đơn đặt hàng theo năm
+    @Query("SELECT u FROM Orders u WHERE YEAR(u.createdAt) = :year AND u.deletedAt IS NULL")
+    public Page<Orders> findOrdersByYear(int year, Pageable pageable);
+
+    // Tìm kiếm các đơn đặt hàng theo năm, tháng
+    @Query("SELECT u FROM Orders u WHERE YEAR(u.createdAt) = :year AND MONTH(u.createdAt) = :month AND u.deletedAt IS NULL")
+    public Page<Orders> findOrdersByYearAndMonth(int year, int month, Pageable pageable);
+
+    // Tìm kiếm các đơn đặt hàng theo năm, tháng, ngày
+    @Query("SELECT u FROM Orders u WHERE YEAR(u.createdAt) = :year AND MONTH(u.createdAt) = :month AND DAY(u.createdAt) = :day AND u.deletedAt IS NULL")
+    public Page<Orders> findOrdersByYearAndMonthAndDay(int year, int month, int day, Pageable pageable);
+
     @Modifying
     @Transactional
     @Query("UPDATE Orders u SET u.deletedAt = CURRENT_TIMESTAMP WHERE u.id = :id AND u.deletedAt IS NULL")

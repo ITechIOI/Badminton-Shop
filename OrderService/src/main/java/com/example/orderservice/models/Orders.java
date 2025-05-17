@@ -40,4 +40,17 @@ public class Orders extends AbstractModel{
     private List<Reviews> reviews;
 
     public Orders() {}
+
+    public String toString() {
+        return "Orders{" +
+                "totalPrice=" + totalPrice +
+                ", status='" + status + '\'' +
+                ", address='" + address + '\'' +
+                ", phone='" + phone + '\'' +
+                ", userId=" + userId +
+                ", discount=" + discount +
+                ", details=" + details +
+                ", reviews=" + reviews +
+                '}';
+    }
 }

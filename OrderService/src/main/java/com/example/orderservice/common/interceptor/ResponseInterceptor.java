@@ -1,6 +1,7 @@
 package com.example.orderservice.common.interceptor;
 
 import com.example.orderservice.modules.Orders.dto.OrderResponse;
+import com.example.orderservice.modules.feign.Payments.PaymentResponse;
 import com.example.orderservice.modules.feign.ProductFeign.ProductResponse;
 import com.example.orderservice.utils.Response;
 import org.springframework.core.MethodParameter;
@@ -43,6 +44,10 @@ public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
         }
 
         if (body instanceof List<?>) {
+            return body;
+        }
+
+        if (body instanceof PaymentResponse) {
             return body;
         }
 

@@ -1,5 +1,6 @@
 package com.example.paymentservice.common.interceptor;
 
+import com.example.paymentservice.modules.payments.dto.PaymentResponse;
 import com.example.paymentservice.utils.Response;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
@@ -37,6 +38,10 @@ public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
         }
 
         if (body instanceof ModelAndView) {
+            return body;
+        }
+
+        if (body instanceof PaymentResponse) {
             return body;
         }
 

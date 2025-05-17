@@ -3,15 +3,14 @@ package com.example.orderservice.modules.OrderDetails.service;
 import com.example.orderservice.models.OrderDetails;
 import com.example.orderservice.models.Orders;
 import com.example.orderservice.modules.OrderDetails.dto.CreateOrderDetailDto;
-import com.example.orderservice.modules.OrderDetails.dto.OrderDetailResponse;
+import com.example.orderservice.modules.OrderDetails.dto.output.MonthlyRevenueDto;
 import com.example.orderservice.modules.OrderDetails.dto.UpdateOrderDetailDto;
+import com.example.orderservice.modules.OrderDetails.dto.output.RawTopProductDto;
+import com.example.orderservice.modules.OrderDetails.dto.output.TopProductDto;
 import com.example.orderservice.modules.OrderDetails.repository.OrderDetailRepository;
-import com.example.orderservice.modules.Orders.repository.OrderRepository;
 import com.example.orderservice.modules.Orders.service.OrderService;
 import com.example.orderservice.modules.feign.ProductFeign.ProductClient;
 import com.example.orderservice.modules.feign.ProductFeign.ProductResponse;
-import com.example.orderservice.modules.feign.UserFeign.UserClient;
-import com.example.orderservice.modules.feign.UserFeign.UserResponse;
 import com.example.orderservice.utils.NotFoundException;
 import com.example.orderservice.utils.NullAwareBeanUtilsBean;
 import com.example.orderservice.utils.PagedResponse;
@@ -101,14 +100,14 @@ public class OrderDetailService implements OrderDetailServiceInterface {
     }
 
 
-    public List<OrderDetailResponse> getOrderDetailsForService(Long orderId) {
+    public List<UpdateOrderDetailDto.OrderDetailResponse> getOrderDetailsForService(Long orderId) {
         List<OrderDetails> orderDetails = orderRepository.findOrderDetailsByOrderIdForService(orderId);
         if (orderDetails.isEmpty()) {
             throw new NotFoundException("Order details not found");
         }
-        List<OrderDetailResponse> orderDetailResponses = new ArrayList<>();
+        List<UpdateOrderDetailDto.OrderDetailResponse> orderDetailResponses = new ArrayList<>();
         for (OrderDetails orderDetailItem : orderDetails) {
-            OrderDetailResponse response = new OrderDetailResponse(
+            UpdateOrderDetailDto.OrderDetailResponse response = new UpdateOrderDetailDto.OrderDetailResponse(
                     orderDetailItem.getQuantity(),
                     orderDetailItem.getPrice(),
                     orderDetailItem.getProudctId(),
@@ -117,6 +116,59 @@ public class OrderDetailService implements OrderDetailServiceInterface {
             orderDetailResponses.add(response);
         }
         return orderDetailResponses;
+    }
+
+    // Tìm kiếm top n sản phẩm bán chạy nhất (có số lượt bán cao nhất)
+    public PagedResponse<TopProductDto> findTopSellingProducts(int page, int limit, Integer year, Integer month, Integer day) {
+        Pageable pageable = PageRequest.of(page, limit);
+        Page<RawTopProductDto> orderDetailsPage;
+
+        if (year != null && month != null && day != null) {
+            orderDetailsPage = orderRepository.findTopSellingProductsByDay(year, month, day, pageable);
+        } else if (year != null && month != null) {
+            orderDetailsPage = orderRepository.findTopSellingProductsByMonth(year, month, pageable);
+        } else if (year != null) {
+            orderDetailsPage = orderRepository.findTopSellingProductsByYear(year, pageable);
+        } else {
+            orderDetailsPage = orderRepository.findTopSellingProductsAllTime(pageable);
+        }
+
+        if (orderDetailsPage.isEmpty()) {
+            throw new NotFoundException("No top selling products found");
+        }
+
+        List<TopProductDto> topProductDtos = orderDetailsPage.getContent().stream()
+                .map(raw -> {
+                    ProductResponse product = productClient.getProductById(raw.productId()).getBody();
+                    return new TopProductDto(product, raw.totalSold());
+                })
+                .toList();
+
+        return new PagedResponse<>(
+                topProductDtos,
+                orderDetailsPage.getTotalPages(),
+                orderDetailsPage.getTotalElements()
+        );
+    }
+
+    public Long getRevenue(Integer year, Integer month, Integer day) {
+        Long revenue;
+
+        if (year != null && month != null && day != null) {
+            revenue = orderRepository.getRevenueByDay(year, month, day);
+        } else if (year != null && month != null) {
+            revenue = orderRepository.getRevenueByMonth(year, month);
+        } else if (year != null) {
+            revenue = orderRepository.getRevenueByYear(year);
+        } else {
+            revenue = orderRepository.getRevenueAllTime();
+        }
+
+        return revenue;
+    }
+
+    public List<MonthlyRevenueDto> visualizeRevenueByYear(int year) {
+        return orderRepository.getMonthlyRevenueByYear(year);
     }
 
     public OrderDetails updateOrderDetails (Long id, UpdateOrderDetailDto updateOrderDetailDto) {

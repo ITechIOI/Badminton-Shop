@@ -20,4 +20,20 @@ public class UpdateOrderDetailDto {
                 ", productId=" + this.getProductId() +
                 ", orderId=" + this.getOrderId() + ")";
     }
+
+    public static record OrderDetailResponse(
+            Integer quantity,
+            Integer price,
+            Long productId,
+            Long orderId
+    ) {
+        public String toString() {
+            return "OrderDetailResponse{" +
+                    "quantity=" + quantity +
+                    ", price=" + price +
+                    ", productId=" + productId +
+                    ", orderId=" + orderId +
+                    '}';
+        }
+    }
 }

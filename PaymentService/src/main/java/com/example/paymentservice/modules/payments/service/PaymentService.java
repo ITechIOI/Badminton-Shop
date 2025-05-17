@@ -76,12 +76,12 @@ public class PaymentService {
         paymentRepository.softDeleteById(id);
     }
 
-    public List<Payments> findPaymentByOrderId(Long orderId) {
+    public Payments findPaymentByOrderId(Long orderId) {
         List<Payments> payments = paymentRepository.findByOrderId(orderId);
         if (payments.isEmpty()) {
             throw new RuntimeException("Payment not found");
         }
-        return payments;
+        return payments.getLast();
     }
 
     public Payments findPaymentById(Long id) {

@@ -168,9 +168,8 @@ public class PaymentController {
     }
 
     @GetMapping("/orderId/{id}")
-    public ResponseEntity<List<Payments>> getPaymentByOrderId(@PathVariable("id") Long id) {
-        List<Payments> payment = paymentService.findPaymentByOrderId(id);
-        return ResponseEntity.ok(payment);
+    public ResponseEntity<Payments> getPaymentByOrderId(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(paymentService.findPaymentByOrderId(id));
     }
 
     @PutMapping("/{id}")
@@ -195,6 +194,21 @@ public class PaymentController {
     @GetMapping("/id/{id}")
     public ResponseEntity<Payments> getPaymentById(@PathVariable Long id) {
         return ResponseEntity.ok(paymentService.findPaymentById(id));
+    }
+
+    @GetMapping("/service/{orderId}")
+    public ResponseEntity<PaymentResponse> getPaymentByIdForMicroservices(@PathVariable Long orderId) {
+        Payments payment = paymentService.findPaymentByOrderId(orderId);
+        System.out.println("Payment information: " + payment);
+        PaymentResponse paymentResponse = new PaymentResponse(
+                payment.getTransactionId(),
+                payment.getPaymentMethod(),
+                payment.getOrderId(),
+                payment.getStatus(),
+                payment.getAmount()
+        );
+        System.out.println("PaymentResponse: " + paymentResponse);
+        return ResponseEntity.ok(paymentResponse);
     }
 
 }

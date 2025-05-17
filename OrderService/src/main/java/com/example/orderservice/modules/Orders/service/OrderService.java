@@ -9,7 +9,10 @@ import com.example.orderservice.modules.OrderDetails.repository.OrderDetailRepos
 import com.example.orderservice.modules.Orders.dto.CreateOrderDto;
 import com.example.orderservice.modules.Orders.dto.OrderResponse;
 import com.example.orderservice.modules.Orders.dto.UpdateOrderDto;
+import com.example.orderservice.modules.Orders.dto.output.OrderByDateDto;
 import com.example.orderservice.modules.Orders.repository.OrderRepository;
+import com.example.orderservice.modules.feign.Payments.PaymentClient;
+import com.example.orderservice.modules.feign.Payments.PaymentResponse;
 import com.example.orderservice.modules.feign.ProductFeign.ProductClient;
 import com.example.orderservice.modules.feign.ProductFeign.ProductResponse;
 import com.example.orderservice.modules.feign.UserFeign.UserClient;
@@ -36,6 +39,7 @@ public class OrderService {
     private final OrderProducer orderProducer;
     private final OrderDetailRepository orderDetailRepository;
     private final ProductClient productClient;
+    private final PaymentClient paymentClient;
 
     public OrderResponse cancelOrder(Long id) {
         Orders orders = orderRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Order not found"));
@@ -193,6 +197,59 @@ public class OrderService {
                 orders.getContent(),
                 orders.getTotalPages(),
                 orders.getTotalElements()
+        );
+    }
+
+    public PagedResponse<OrderByDateDto> orderStatisticsByTime(Integer year, Integer month, Integer day, int page, int limit) {
+        Pageable pageable = PageRequest.of(page, limit);
+        Page<Orders> ordersPage;
+
+        if (year != null && month != null && day != null) {
+            ordersPage = orderRepository.findOrdersByYearAndMonthAndDay(year, month, day, pageable);
+        } else if (year != null && month != null) {
+            ordersPage = orderRepository.findOrdersByYearAndMonth(year, month, pageable);
+        } else if (year != null) {
+            ordersPage = orderRepository.findOrdersByYear(year, pageable);
+        } else {
+            ordersPage = orderRepository.findAllOrders(pageable);
+        }
+
+        if (ordersPage.isEmpty()) {
+            throw new NotFoundException("No top selling products found");
+        }
+        System.out.println("Payment list: " + ordersPage.getContent().getLast().toString());
+
+        List<OrderByDateDto> orderDetailsPage = ordersPage.getContent().stream()
+                .map(order -> {
+                    UserResponse userResponse;
+                    PaymentResponse paymentResponse;
+                    try {
+                        userResponse = userClient.getUserById(order.getUserId()).getBody();
+                    } catch (Exception e) {
+                        throw new NotFoundException("User not found with ID: " + order.getUserId());
+                    }
+                    try {
+                        paymentResponse = paymentClient.getPaymentByIdForMicroservices(order.getUserId()).getBody();
+                    } catch (Exception e) {
+                        throw new NotFoundException(e.getMessage());
+                    }
+                    return new OrderByDateDto(
+                            order.getId(),
+                            order.getAddress(),
+                            order.getPhone(),
+                            order.getTotalPrice(),
+                            paymentResponse.getPaymentMethod(),
+                            order.getStatus(),
+                            userResponse,
+                            order.getCreatedAt()
+                    );
+                })
+                .toList();
+
+        return new PagedResponse<>(
+                orderDetailsPage,
+                ordersPage.getTotalPages(),
+                ordersPage.getTotalElements()
         );
     }
 

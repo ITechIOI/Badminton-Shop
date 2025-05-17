@@ -22,19 +22,19 @@ public class PaymentConsumer {
     public void consumePaymentSuccess (OrderResponse orderResponse) {
         System.out.println("Payment confirmation received in payment service: " + orderResponse);
 
-        List<Payments> payments = paymentService.findPaymentByOrderId(orderResponse.id());
+        Payments payments = paymentService.findPaymentByOrderId(orderResponse.id());
 //        paymentService.refundPayment(payments.getFirst().getId());
 
         PaymentResponse paymentResponse = new PaymentResponse();
-        paymentResponse.setPaymentMethod(payments.getFirst().getPaymentMethod());
-        paymentResponse.setOrderId(payments.getFirst().getOrderId());
-        paymentResponse.setAmount(payments.getFirst().getAmount());
+        paymentResponse.setPaymentMethod(payments.getPaymentMethod());
+        paymentResponse.setOrderId(payments.getOrderId());
+        paymentResponse.setAmount(payments.getAmount());
         paymentResponse.setStatus("refunded");
-        paymentResponse.setTransactionId(payments.getFirst().getTransactionId());
+        paymentResponse.setTransactionId(payments.getTransactionId());
 
         System.out.println("Payment created: " + paymentResponse + "\n");
 
-        if (paymentService.refundPayment(payments.getFirst().getId())) {
+        if (paymentService.refundPayment(payments.getId())) {
             paymentProducer.sendRefundSuccess(paymentResponse);
         } else {
             paymentProducer.sendRollbackOrder(paymentResponse);

@@ -47,3 +47,4 @@ application:
   config:
     user-url: http://gateway:8222/users/users
     product-url: http://gateway:8222/products/products
+    payment-url: http://gateway:8222/payment

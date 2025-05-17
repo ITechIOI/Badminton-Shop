@@ -2,8 +2,9 @@ package com.example.orderservice.modules.OrderDetails.controller;
 
 import com.example.orderservice.models.OrderDetails;
 import com.example.orderservice.modules.OrderDetails.dto.CreateOrderDetailDto;
-import com.example.orderservice.modules.OrderDetails.dto.OrderDetailResponse;
+import com.example.orderservice.modules.OrderDetails.dto.output.MonthlyRevenueDto;
 import com.example.orderservice.modules.OrderDetails.dto.UpdateOrderDetailDto;
+import com.example.orderservice.modules.OrderDetails.dto.output.TopProductDto;
 import com.example.orderservice.modules.OrderDetails.service.OrderDetailService;
 import com.example.orderservice.utils.PagedResponse;
 import lombok.AllArgsConstructor;
@@ -46,7 +47,7 @@ public class OrderDetailController {
     }
 
     @GetMapping("/service/all/{orderId}")
-    public ResponseEntity<List<OrderDetailResponse>> getAllOrderDetails(
+    public ResponseEntity<List<UpdateOrderDetailDto.OrderDetailResponse>> getAllOrderDetails(
             @PathVariable("orderId") Long orderId
     ) {
         return ResponseEntity.ok(orderDetailService.getOrderDetailsForService(orderId));
@@ -59,6 +60,35 @@ public class OrderDetailController {
             @RequestParam(value = "limit", defaultValue = "10") int limit
     ) {
         return ResponseEntity.ok(orderDetailService.findDetailsByProductId(productId, page, limit));
+    }
+
+    @GetMapping("/best-selling")
+    public ResponseEntity<PagedResponse<TopProductDto>> getBestSellingProducts(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month,
+            @RequestParam(value = "day", required = false) Integer day,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) {
+        return ResponseEntity.ok(
+                orderDetailService.findTopSellingProducts(page, limit, year, month, day)
+        );
+    }
+
+    @GetMapping("/revenue")
+    public ResponseEntity<Long> getRevenue(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month,
+            @RequestParam(value = "day", required = false) Integer day
+    ) {
+        return ResponseEntity.ok(orderDetailService.getRevenue(year, month, day));
+    }
+
+    @GetMapping("/visualize-revenue/{year}")
+    public List<MonthlyRevenueDto> visualizeRevenueByYear(
+            @PathVariable("year") Integer year
+    ) {
+        return orderDetailService.visualizeRevenueByYear(year);
     }
 
     @PutMapping("/{id}")
