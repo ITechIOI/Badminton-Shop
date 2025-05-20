@@ -1,59 +1,30 @@
-//package com.example.gateway.security;
-//
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.config.Customizer;
-//import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-//import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-//import org.springframework.security.config.web.server.ServerHttpSecurity;
-//import org.springframework.security.web.server.SecurityWebFilterChain;
-//
-//@Configuration
-//@EnableWebFluxSecurity
-//@EnableMethodSecurity
-//public class SecurityConfig {
-//
-//    @Bean
-//    public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) throws Exception {
-//        http
-//                .csrf(ServerHttpSecurity.CsrfSpec::disable) // Tắt CSRF nếu không cần thiết
-//                .authorizeExchange(exchange -> exchange
-//                        .pathMatchers("/eureka/**").permitAll()
-//                        .pathMatchers("/users/**").hasRole("admin")
-//                        .anyExchange().authenticated()
-//                )
-//                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
-//
-//        return http.build();
-//    }
-//}
-
-
 package com.example.gateway.security;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource; // ✅ Đúng cho WebFlux
 import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -62,26 +33,37 @@ public class SecurityConfig {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
+    // ✅ Public routes - không cần JWT
     @Bean
-    public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
+    @Order(1)
+    public SecurityWebFilterChain publicFilterChain(ServerHttpSecurity http) {
+        http
+                .securityMatcher(ServerWebExchangeMatchers.pathMatchers(
+                        "/eureka/**",
+                        "/users/users/id/**",
+                        "/users/**",
+                        "/orders/order-details/service/**",
+                        "/orders/orders/service/**",
+                        "/products/products/services/**",
+                        "/notifications/**"
+                ))
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(ex -> ex.anyExchange().permitAll());
+        return http.build();
+    }
 
+    // ✅ Secured routes - yêu cầu xác thực JWT
+    @Bean
+    @Order(2)
+    public SecurityWebFilterChain securedFilterChain(ServerHttpSecurity http) {
         http
                 .cors(Customizer.withDefaults())
-                .csrf(ServerHttpSecurity.CsrfSpec::disable) // Tắt CSRF nếu không cần thiết
-                .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/eureka/**").permitAll()
-                        .pathMatchers("/users/users/id/**").permitAll()
-//                        .pathMatchers("/users/**").hasRole("admin")  // Role lấy từ realm_access.roles
-                        .pathMatchers("/users/**").permitAll()
-                        .pathMatchers("/orders/order-details/service/**").permitAll()
-                        .pathMatchers("/orders/orders/service/**").permitAll()
-                        .pathMatchers("/products/products/services/**").permitAll()
-                        .pathMatchers("/notifications/**").permitAll()
-                        .anyExchange().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor()))
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(ex -> ex.anyExchange().authenticated())
+                .oauth2ResourceServer(oauth2 ->
+                        oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor()))
                 );
+
         return http.build();
     }
 
@@ -90,7 +72,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOrigins(List.of("http://localhost:3000"));
-        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -99,13 +81,14 @@ public class SecurityConfig {
     }
 
     private Converter<Jwt, Mono<AbstractAuthenticationToken>> grantedAuthoritiesExtractor() {
-
         return jwt -> {
             List<String> realmRoles = jwt.getClaim("realm_access") != null
-                    ? ((List<String>) ((java.util.Map<String, Object>) jwt.getClaim("realm_access")).get("roles"))
+                    ? ((List<String>) ((Map<String, Object>) jwt.getClaim("realm_access")).get("roles"))
                     : List.of();
-            logger.debug("⚡ JWT Token: {}" + jwt.getTokenValue()); // Hiển thị token
-            logger.debug("⚡ User Roles: {}" + realmRoles);
+
+            logger.debug("⚡ JWT Token: {}", jwt.getTokenValue());
+            logger.debug("⚡ User Roles: {}", realmRoles);
+
             Collection<GrantedAuthority> authorities = realmRoles.stream()
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                     .collect(Collectors.toList());
