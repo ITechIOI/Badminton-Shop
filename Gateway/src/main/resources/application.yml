@@ -52,10 +52,22 @@ spring:
           uri: lb:http://NOTIFICATIONSERVICE
           predicates:
             - Path=/notifications/**
+          filters:
+            - PreserveHostHeader=true
+        - id: NotificationServiceWS
+          uri: lb:http://NOTIFICATIONSERVICE
+          predicates:
+            - Path=/notifications/ws/**
+          filters:
+            - RewritePath=/notifications/ws(?<segment>/?.*), /ws${segment}
         - id: ReportService
           uri: lb:http://REPORTSERVICE
           predicates:
             - Path=/reports/**
+        - id: RecommendService
+          uri: http://recommend-service:8008
+          predicates:
+            - Path=/recommend/**
 
 eureka:
   client:

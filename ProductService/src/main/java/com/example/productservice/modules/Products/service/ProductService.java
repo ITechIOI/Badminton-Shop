@@ -1,7 +1,6 @@
 package com.example.productservice.modules.Products.service;
 
 import com.example.productservice.models.Categories;
-import com.example.productservice.models.GRN_Details;
 import com.example.productservice.models.Products;
 import com.example.productservice.modules.Catgories.service.CategoryService;
 import com.example.productservice.modules.Products.dto.CreateProductDto;
@@ -11,6 +10,7 @@ import com.example.productservice.modules.Products.repository.ProductRepository;
 import com.example.productservice.utils.NotFoundException;
 import com.example.productservice.utils.NullAwareBeanUtilsBean;
 import com.example.productservice.utils.PagedResponse;
+import jakarta.ws.rs.BadRequestException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.slf4j.Logger;
@@ -41,6 +41,14 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    public List<Products> findAllProductsNotPaginate() {
+        List<Products> products = productRepository.findAllProductsNoPage();
+        if (products.isEmpty()) {
+            throw new NotFoundException("No product found");
+        }
+        return products;
+    }
+
     public Products findProductById(Long id) {
         logger.info("Product created: {}", productRepository.findOneById(id));
         return productRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Product not found"));
@@ -67,6 +75,22 @@ public class ProductService {
         if (products.getContent().isEmpty()) {
             throw new NotFoundException("No product found");
         }
+        return new PagedResponse<>(products.getContent(), products.getTotalPages(), products.getTotalElements());
+    }
+
+    public PagedResponse<Products> getProductsByName(String name, int page, int limit) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new BadRequestException("Keyword cannot be empty");
+        }
+
+        String searchPattern = "%" + name.trim() + "%";
+        Pageable pageable = PageRequest.of(page, limit);
+        Page<Products> products = productRepository.findByNameLike(searchPattern.toLowerCase(), pageable);
+
+        if (products.getContent().isEmpty()) {
+            throw new NotFoundException("No product found");
+        }
+
         return new PagedResponse<>(products.getContent(), products.getTotalPages(), products.getTotalElements());
     }
 

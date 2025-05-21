@@ -39,6 +39,15 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(id, createProductDto));
     }
 
+    @GetMapping("/name/{name}")
+    public ResponseEntity<PagedResponse<Products>> getProductLikeName(
+            @PathVariable(value = "name") String name,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) {
+        return ResponseEntity.ok(productService.getProductsByName(name, page, limit));
+    }
+
     @GetMapping("/id/{id}")
     public ResponseEntity<Products> getProductById(@PathVariable("id") Long id) {
         System.out.println("ProductController.getProductById");
@@ -80,5 +89,10 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable("id") Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok(null);
+    }
+
+    @GetMapping("/all-no-paginate")
+    public List<Products> getAllProductsNoPaginate() {
+        return productService.findAllProductsNotPaginate();
     }
 }

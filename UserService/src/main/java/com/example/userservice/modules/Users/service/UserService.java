@@ -178,51 +178,70 @@ public class UserService {
 
     public PagedResponse<UserResponse> getAllUsers(int page, int limit) {
         try {
-            int offset = page * limit;
-
+            // Lấy toàn bộ user từ Keycloak để lọc chính xác
             List<UserRepresentation> keycloakUsers = realmResource()
                     .users()
-                    .search("", offset, limit);
+                    .search("", 0, Integer.MAX_VALUE);
 
-            long totalUsers = realmResource()
-                    .users()
-                    .count();
+            // Lọc và chuyển đổi sang danh sách hợp lệ
+            List<UserResponse> allValidUsers = keycloakUsers.stream()
+                    .map(user -> {
+                        try {
+                            Users userInMySQL = userRepository.findOneByKeycloakId(user.getId());
+                            if (userInMySQL == null) return null;
 
-            List<UserResponse> userResponses = keycloakUsers.stream().map(user -> {
-                String fullName = String.format("%s %s",
-                        Optional.ofNullable(user.getFirstName()).orElse(""),
-                        Optional.ofNullable(user.getLastName()).orElse("")
-                ).trim();
+                            String fullName = String.format("%s %s",
+                                    Optional.ofNullable(user.getFirstName()).orElse(""),
+                                    Optional.ofNullable(user.getLastName()).orElse("")
+                            ).trim();
 
-                Map<String, List<String>> attributes = Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>());
-                String gender = attributes.getOrDefault("gender", Collections.emptyList()).stream().findFirst().orElse(null);
-                String avatar = attributes.getOrDefault("avatar", Collections.emptyList()).stream().findFirst().orElse(null);
-                String phone  = attributes.getOrDefault("phone",  Collections.emptyList()).stream().findFirst().orElse(null);
+                            Map<String, List<String>> attributes = Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>());
+                            String gender = attributes.getOrDefault("gender", Collections.emptyList()).stream().findFirst().orElse(null);
+                            String avatar = attributes.getOrDefault("avatar", Collections.emptyList()).stream().findFirst().orElse(null);
+                            String phone = attributes.getOrDefault("phone", Collections.emptyList()).stream().findFirst().orElse(null);
 
-                Users userInMySQL = userRepository.findOneByKeycloakId(user.getId());
-                if (userInMySQL == null) {
-                    throw new NotFoundException("User not found in MySQL");
-                }
-                Long id = (userInMySQL != null) ? userInMySQL.getId() : null;
+                            // Lấy realm roles và tìm role "admin" hoặc "user"
+                            List<RoleRepresentation> roles = realmResource()
+                                    .users()
+                                    .get(user.getId())
+                                    .roles()
+                                    .realmLevel()
+                                    .listEffective();
 
-                return new UserResponse(
-                        id,
-                        fullName.isEmpty() ? null : fullName,
-                        gender,
-                        avatar,
-                        phone,
-                        user.getEmail(),
-                        user.getUsername(),
-                        null
-                );
-            }).collect(Collectors.toList());
+                            String matchedRole = roles.stream()
+                                    .map(RoleRepresentation::getName)
+                                    .filter(role -> role.equals("admin") || role.equals("user"))
+                                    .findFirst()
+                                    .orElse(null); // Nếu không có thì set là null
 
-            int totalPages = (int) Math.ceil((double) totalUsers / limit);
+                            return new UserResponse(
+                                    userInMySQL.getId(),
+                                    fullName.isEmpty() ? null : fullName,
+                                    gender,
+                                    avatar,
+                                    phone,
+                                    user.getEmail(),
+                                    user.getUsername(),
+                                    matchedRole // role là String
+                            );
+                        } catch (Exception e) {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            // Tính toán phân trang
+            int totalElements = allValidUsers.size();
+            int totalPages = (int) Math.ceil((double) totalElements / limit);
+            int fromIndex = Math.min(page * limit, totalElements);
+            int toIndex = Math.min(fromIndex + limit, totalElements);
+            List<UserResponse> pagedUsers = allValidUsers.subList(fromIndex, toIndex);
 
             return PagedResponse.<UserResponse>builder()
-                    .content(userResponses)
+                    .content(pagedUsers)
                     .totalPages(totalPages)
-                    .totalElements(totalUsers)
+                    .totalElements(totalElements)
                     .build();
 
         } catch (Exception e) {
@@ -332,13 +351,6 @@ public class UserService {
                 cred.setValue(dto.getPassword());
                 userResource.resetPassword(cred);
             }
-
-//            // Không cho phép cập nhật role
-//            if (dto.getRoles() != null) {
-//                userResource.roles().realmLevel().remove(userResource.roles().realmLevel().listAll());
-//                RoleRepresentation newRole = realmResource().roles().get(dto.getRoles()).toRepresentation();
-//                userResource.roles().realmLevel().add(List.of(newRole));
-//            }
         } catch (Exception e) {
             throw new RuntimeException("Update failed", e);
         }

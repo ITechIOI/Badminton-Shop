@@ -45,7 +45,9 @@ public class SecurityConfig {
                         "/orders/order-details/service/**",
                         "/orders/orders/service/**",
                         "/products/products/services/**",
-                        "/notifications/**"
+                        "/products/products/**",
+                        "/notifications/**",
+                        "/ws/**"
                 ))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex.anyExchange().permitAll());

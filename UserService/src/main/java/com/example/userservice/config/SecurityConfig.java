@@ -38,6 +38,9 @@ public class SecurityConfig {
                         .requestMatchers("/users/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(Customizer.withDefaults())
+                )
                 // ⚠️ Sửa lỗi: Thêm filter trước UsernamePasswordAuthenticationFilter
                 .addFilterBefore(new GatewayRequestFilter(), UsernamePasswordAuthenticationFilter.class);
 

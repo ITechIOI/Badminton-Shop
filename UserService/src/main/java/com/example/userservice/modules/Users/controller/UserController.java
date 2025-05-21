@@ -31,7 +31,7 @@ public class UserController {
 
     @PostMapping("/new")
     public ResponseEntity<Users> createUser(
-            @ModelAttribute CreateUserDto user) {
+            @RequestBody CreateUserDto user) {
         System.out.println("Create new user: " + user.toString());
         return ResponseEntity.ok(userService.createUser(user));
     }
@@ -61,10 +61,11 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserByKeycloakId(keycloakId));
     }
 
+    // Không cho phép update role của người dùng
     @PutMapping()
     public ResponseEntity<Void> updateUser(
             @AuthenticationPrincipal Jwt jwt,
-            @ModelAttribute UpdateUserDto updateUserDto
+            @RequestBody UpdateUserDto updateUserDto
     ) {
         String keycloakId = jwt.getClaim("sub");
         userService.updateUser(keycloakId, updateUserDto);
