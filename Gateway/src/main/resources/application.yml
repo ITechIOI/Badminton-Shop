@@ -27,13 +27,14 @@ spring:
     name: GatewayService
   cloud:
     gateway:
+      forwarded:
+        enabled: true
       discovery:
         locator:
           enabled: true
       routes:
         - id: UserService
           uri: lb:http://USERSERVICE
-#          uri: lb:http://588dbad3f74a:UserService:8001
           predicates:
             - Path=/users/**
         - id: ProductService
@@ -52,18 +53,14 @@ spring:
           uri: lb:http://NOTIFICATIONSERVICE
           predicates:
             - Path=/notifications/**
-          filters:
-            - PreserveHostHeader=true
-        - id: NotificationServiceWS
-          uri: lb:http://NOTIFICATIONSERVICE
-          predicates:
-            - Path=/notifications/ws/**
-          filters:
-            - RewritePath=/notifications/ws(?<segment>/?.*), /ws${segment}
         - id: ReportService
-          uri: lb:http://REPORTSERVICE
+          uri: lb:ws://REPORTSERVICE
           predicates:
-            - Path=/reports/**
+            - Path=/ws/**
+        - id: UserBehaviorService
+          uri: lb:http://USERBEHAVIORSERVICE
+          predicates:
+            - Path=/behaviors/**
         - id: RecommendService
           uri: http://recommend-service:8008
           predicates:
@@ -82,6 +79,10 @@ management:
     tracing:
       #            endpoint: http://zipkin:9411/zipkin/
       endpoint: http://zipkin:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health,info,resilience4j.circuitbreakers
 
 logging:
   level:

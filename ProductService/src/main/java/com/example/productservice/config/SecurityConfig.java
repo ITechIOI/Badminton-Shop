@@ -36,6 +36,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/products/products/all-no-paginate").permitAll()
+                        .requestMatchers("/products/actuator/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -76,6 +78,12 @@ public class SecurityConfig {
         @Override
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                 throws ServletException, IOException {
+            String path = request.getRequestURI();
+            if (path.startsWith("/actuator")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             // 💡 Cho phép CORS preflight request (OPTIONS) đi qua
             if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
                 response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");

@@ -37,6 +37,15 @@ management:
   zipkin:
     tracing:
       endpoint: http://zipkin:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health,info,resilience4j.circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+    resilience4j:
+      enabled: true
 
 logging:
   level:
@@ -54,4 +63,19 @@ application:
   config:
     user-url: http://gateway:8222/users/users
     order-details-url: http://gateway:8222/orders/order-details
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 50           # dùng 50 call để tính tỉ lệ lỗi
+        failureRateThreshold: 30        # 30% lỗi sẽ mở mạch
+        waitDurationInOpenState: 20s    # chờ 20s trước khi half-open
+        permittedNumberOfCallsInHalfOpenState: 5
+
+    instances:
+      getAllProductsCB: # đặt tên Circuit breaker
+        baseConfig: default
+
+
 

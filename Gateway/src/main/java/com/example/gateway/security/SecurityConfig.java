@@ -40,6 +40,7 @@ public class SecurityConfig {
         http
                 .securityMatcher(ServerWebExchangeMatchers.pathMatchers(
                         "/eureka/**",
+                        "/products/actuator/**",
                         "/users/users/id/**",
                         "/users/**",
                         "/orders/order-details/service/**",

@@ -145,6 +145,26 @@ services:
       EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: 10
       EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: 30
 
+  report-service:
+    build: ./ReportService
+    container_name: report-service
+    ports:
+      - "8007:8007"
+    depends_on:
+      - config-server
+      - discovery-server
+    networks:
+      - microservices-net
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_APPLICATION_NAME: ReportService
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/micro-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true" # Sử dụng IP thay vì hostname
+      EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: 10
+      EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: 30
+
   recommend-service:
     build:
       context: ./RecommendService
@@ -161,6 +181,26 @@ services:
       - PINECONE_INDEX=badminton
       - NESTJS_MENU_ENDPOINT=http://localhost:8222/products/products/all-no-paginate
       - JINA_API_TOKEN=jina_a3af64c8f3de45e3af0b040ba8d697ef-zZHaVUTWHLhl6E0QkRjm3a5kb4O
+
+  behavior-service:
+    build: ./UserBehaviorService
+    container_name: behavior-service
+    ports:
+      - "8009:8009"
+    depends_on:
+      - config-server
+      - discovery-server
+    networks:
+      - microservices-net
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_APPLICATION_NAME: UserBehaviorService
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/micro-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true" # Sử dụng IP thay vì hostname
+      EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: 10
+      EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: 30
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest

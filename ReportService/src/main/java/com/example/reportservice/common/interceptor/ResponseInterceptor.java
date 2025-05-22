@@ -1,5 +1,6 @@
 package com.example.reportservice.common.interceptor;
 
+import com.example.reportservice.modules.feign.UserResponse;
 import com.example.reportservice.utils.Response;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
@@ -16,27 +17,33 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
 
     @Override
-    public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        return true; // Áp dụng cho tất cả response
+    public boolean supports(MethodParameter returnType,
+                            Class<? extends HttpMessageConverter<?>> converterType) {
+        // Chỉ apply cho REST controller của bạn, không apply cho SockJS handler
+        String pkg = returnType.getContainingClass().getPackageName();
+        return pkg.startsWith("com.example.reportservice.modules");
     }
 
     @Override
-    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
-                                  Class<? extends HttpMessageConverter<?>> selectedConverterType,
+    public Object beforeBodyWrite(Object body, MethodParameter returnType,
+                                  MediaType selectedContentType,
+                                  Class<? extends HttpMessageConverter<?>> converterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
-
-        // Nếu body đã là Response rồi thì không cần bao thêm
+        String path = request.getURI().getPath();
+        // Nếu là WebSocket handshake thì trả nguyên body
+        if (path.startsWith("/ws/") || path.equals("/ws/info")) {
+            return body;
+        }
+        // --- else: phần wrap bình thường của bạn ---
         if (body instanceof Response) {
             return body;
         }
-
-        // Nếu body là lỗi, tự động trả về format error
         if (body instanceof ResponseEntity<?>) {
-            ResponseEntity<?> responseEntity = (ResponseEntity<?>) body;
-            return Response.error(responseEntity.getStatusCode().value(), "Request Error");
+            ResponseEntity<?> re = (ResponseEntity<?>) body;
+            return Response.error(re.getStatusCodeValue(), "Request Error");
         }
-
-        // Bao response vào format thống nhất
         return Response.success(body);
     }
 }
+
+

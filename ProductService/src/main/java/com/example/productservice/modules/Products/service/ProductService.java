@@ -10,6 +10,7 @@ import com.example.productservice.modules.Products.repository.ProductRepository;
 import com.example.productservice.utils.NotFoundException;
 import com.example.productservice.utils.NullAwareBeanUtilsBean;
 import com.example.productservice.utils.PagedResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.ws.rs.BadRequestException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.beanutils.BeanUtilsBean;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -69,6 +71,10 @@ public class ProductService {
         );
     }
 
+    @CircuitBreaker(
+            name = "getAllProductsCB",
+            fallbackMethod = "fallbackGetAllProducts"
+    )
     public PagedResponse<Products> getAllProducts(int page, int limit) {
         Pageable pageable = PageRequest.of(page, limit);
         Page<Products> products = productRepository.findAllProducts(pageable);
@@ -76,6 +82,17 @@ public class ProductService {
             throw new NotFoundException("No product found");
         }
         return new PagedResponse<>(products.getContent(), products.getTotalPages(), products.getTotalElements());
+    }
+
+    public PagedResponse<Products> fallbackGetAllProducts(
+            int page, int limit, Throwable t
+    ) {
+        logger.warn("getAllProducts service unavailable: {}", t.toString());
+        return new PagedResponse<>(
+                Collections.emptyList(),
+                0,
+                0
+        );
     }
 
     public PagedResponse<Products> getProductsByName(String name, int page, int limit) {

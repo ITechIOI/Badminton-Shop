@@ -9,6 +9,7 @@
     <file url="file://$PROJECT_DIR$/PaymentService/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ProductService/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ReportService/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/UserBehaviorService/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/UserService/src/main/java" charset="UTF-8" />
   </component>
 </project>

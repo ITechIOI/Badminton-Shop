@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/notifications/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
 //                .oauth2ResourceServer(oauth2 -> oauth2
