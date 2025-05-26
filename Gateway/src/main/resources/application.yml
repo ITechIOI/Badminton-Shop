@@ -25,8 +25,22 @@ spring:
     import: optional:configserver:http://config-server:8888
   application:
     name: GatewayService
+  data:
+    cache:
+      type: redis
+    redis:
+      host: redis
+      port: 6379
+      timeout: 5000
   cloud:
     gateway:
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            key-resolver: "#{@ipKeyResolver}"
+            redis-rate-limiter.replenishRate: 10
+            redis-rate-limiter.burstCapacity: 20
+            redis-rate-limiter.requestedTokens: 1
       forwarded:
         enabled: true
       discovery:
@@ -89,3 +103,20 @@ logging:
     root: DEBUG
     org.springframework.security: DEBUG
     com.example.gateway.security: DEBUG
+
+bucket4j:
+  enabled: true
+  filters:
+    - cache-name: buckets
+      url: .*
+      http-status-code: 429
+      rate-limits:
+        - bandwidths:
+            - capacity: 50
+              time: 1
+              unit: minutes
+      strategy: first
+      filter-method: webflux
+  scope: ip
+
+

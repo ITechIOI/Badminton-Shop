@@ -41,6 +41,8 @@ services:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/micro-service
       SPRING_CLOUD_DISCOVERY_CLIENT_SIMPLE_HINTS.USER-SERVICE: "http://user-service:8001" # Gợi ý URL cho Gateway
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
 
   user-service:
     build: ./UserService
@@ -313,10 +315,22 @@ services:
       - --hostname-strict=false
       - --hostname-url=http://keycloak:8080
 
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    networks:
+      - microservices-net
+
 volumes:
   keycloak-h2-data:
   zipkin-data:
   es_data:
+  redis-data:
 
 networks:
   microservices-net:

@@ -12,4 +12,5 @@ public class CreateSubscriptionDto {
     private String auth;
     private String p256dh;
     private Long userId;
+
 }

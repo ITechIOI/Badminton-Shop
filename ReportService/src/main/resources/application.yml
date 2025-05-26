@@ -28,3 +28,7 @@ eureka:
   client:
     service-url:
       defaultZone: http://discovery-server:8761/eureka
+
+fcm:
+  api:
+    url: https://fcm.googleapis.com/fcm/send
