@@ -1,15 +1,3 @@
-#spring:
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: "http://localhost:9098/realms/micro-service"
-#          jwk-set-uri: http://localhost:9098/realms/micro-service/protocol/openid-connect/certs
-#  config:
-#    import: optional:configserver:http://localhost:8888
-#  application:
-#    name: GatewayService
-
 server:
   port: 8222
 
@@ -41,6 +29,10 @@ spring:
             redis-rate-limiter.replenishRate: 10
             redis-rate-limiter.burstCapacity: 20
             redis-rate-limiter.requestedTokens: 1
+        - name: CircuitBreaker
+          args:
+            name: globalCB
+            fallbackUri: forward:/fallback
       forwarded:
         enabled: true
       discovery:
@@ -96,7 +88,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,resilience4j.circuitbreakers
+        include: health,info,circuitbreakers
 
 logging:
   level:
@@ -119,4 +111,13 @@ bucket4j:
       filter-method: webflux
   scope: ip
 
-
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+    instances:
+      globalCB:
+        base-config: default
