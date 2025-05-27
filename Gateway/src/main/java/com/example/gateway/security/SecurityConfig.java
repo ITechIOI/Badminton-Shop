@@ -48,7 +48,8 @@ public class SecurityConfig {
                         "/products/products/services/**",
                         "/products/products/**",
                         "/notifications/**",
-                        "/ws/**"
+                        "/ws/**",
+                        "/actuator/prometheus"
                 ))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex.anyExchange().permitAll());

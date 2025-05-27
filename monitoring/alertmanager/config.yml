@@ -1,0 +1,20 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: sandbox.smtp.mailtrap.io:2525
+  smtp_from: nguyenloan2000hbt@gmail.com
+  smtp_auth_username: e5730f994d0ef2
+  smtp_auth_password: ec10874e2fbfb3
+
+route:
+  receiver: 'team-email'
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+
+receivers:
+  - name: 'team-email'
+    email_configs:
+      - to: nguyenloan2000hbt@gmail.com
+        send_resolved: true
+
+
