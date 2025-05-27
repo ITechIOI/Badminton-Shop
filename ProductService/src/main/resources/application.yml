@@ -40,7 +40,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,resilience4j.circuitbreakers
+        include: health,info,circuitbreakers,prometheus
   endpoint:
     health:
       show-details: always

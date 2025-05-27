@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/products/products/all-no-paginate").permitAll()
                         .requestMatchers("/products/actuator/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/actuator/prometheus").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
