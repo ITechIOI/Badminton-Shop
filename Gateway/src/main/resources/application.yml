@@ -26,13 +26,9 @@ spring:
         - name: RequestRateLimiter
           args:
             key-resolver: "#{@ipKeyResolver}"
-            redis-rate-limiter.replenishRate: 10
-            redis-rate-limiter.burstCapacity: 20
-            redis-rate-limiter.requestedTokens: 1
-        - name: CircuitBreaker
-          args:
-            name: globalCB
-            fallbackUri: forward:/fallback
+            redis-rate-limiter.replenishRate: 50
+            redis-rate-limiter.burstCapacity: 50
+            redis-rate-limiter.requestedTokens: 50
       forwarded:
         enabled: true
       discovery:
@@ -83,12 +79,11 @@ management:
       probability: 1.0
   zipkin:
     tracing:
-      #            endpoint: http://zipkin:9411/zipkin/
       endpoint: http://zipkin:9411/api/v2/spans
   endpoints:
     web:
       exposure:
-        include: health,info,circuitbreakers,prometheus
+        include: health,info,prometheus
 
 logging:
   level:
@@ -110,14 +105,3 @@ bucket4j:
       strategy: first
       filter-method: webflux
   scope: ip
-
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 5s
-    instances:
-      globalCB:
-        base-config: default

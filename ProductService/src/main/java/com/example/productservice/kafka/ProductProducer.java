@@ -1,5 +1,6 @@
 package com.example.productservice.kafka;
 
+import com.example.productservice.models.Flash_Sale;
 import com.example.productservice.modules.feign.Payments.PaymentResponse;
 import com.example.productservice.utils.NotificationResponseKafka;
 import lombok.Getter;
@@ -27,6 +28,15 @@ public class ProductProducer {
         Message<PaymentResponse> message = MessageBuilder
                 .withPayload( productResponse)
                 .setHeader(TOPIC, "inventory-success-events")
+                .build();
+        kafkaTemplate.send(message);
+    }
+
+    public void sendFlashSaleProgram(Flash_Sale flashSale) {
+        log.info("Flash sale program sent: {}", flashSale);
+        Message<Flash_Sale> message = MessageBuilder
+                .withPayload(flashSale)
+                .setHeader(TOPIC, "flash-sale-events")
                 .build();
         kafkaTemplate.send(message);
     }

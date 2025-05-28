@@ -23,6 +23,7 @@ public class CloudinaryController {
     public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
             List<String> imageUrl = cloudinaryService.uploadMedia(file);
+            System.out.println("Uploaded image URL: " + imageUrl.get(0));
             return ResponseEntity.ok(imageUrl.get(0) + " " + imageUrl.get(1));
         } catch (IOException e) {
             throw new RuntimeException("Failed to upload media");

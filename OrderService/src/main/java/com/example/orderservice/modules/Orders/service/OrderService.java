@@ -139,7 +139,6 @@ public class OrderService {
 
         orderProducer.sendOrderConfirmation(response);
 
-
         return savedOrder;
     }
 
