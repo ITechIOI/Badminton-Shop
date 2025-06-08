@@ -14,36 +14,20 @@ import com.paypal.api.payments.Payment;
 import com.paypal.base.rest.PayPalRESTException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.view.RedirectView;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.List;
 
 @RestController
-@RequestMapping("payment")
+@RequestMapping("/payment")
 @Slf4j
 @RequiredArgsConstructor
 public class PaymentController {
 
-    @Autowired
-    private PaymentService paymentService;
-
-    @Autowired
-    private PaymentFactory paymentFactory;
-
-    private IPayment paymentPaypal;
-
-    private final PaymentProducer paymentProducer;
-
-    private Long orderId;
-//    @Autowired
-//    private Paypal paypal;
+    private final PaymentService    paymentService;
+    private final PaymentFactory    paymentFactory;
+    private final PaymentProducer   paymentProducer;
 
     @Value("${paypal.SUCCESS_URL}")
     private String successUrl;
@@ -51,109 +35,113 @@ public class PaymentController {
     @Value("${paypal.CANCEL_URL}")
     private String cancelUrl;
 
-//    public class PaymentProducer {
-//        private final KafkaTemplate<String, PaymentResponse> kafkaTemplate;
-//
-//        public void sendPaymentConfirmation(PaymentResponse paymentResponse) {
-//            log.info("Payment confirmation sent: {}", paymentResponse);
-//            Message<PaymentResponse> message = MessageBuilder
-//                    .withPayload(paymentResponse)
-//                    .setHeader(TOPIC, "payment-topic")
-//                    .build();
-//            kafkaTemplate.send(message);
-//        }
-//    }
-
     @GetMapping("/test")
     public ResponseEntity<PaymentResponse> testing() {
         Payments payment = paymentService.findPaymentById(2L);
-        PaymentResponse paymentResponse = new PaymentResponse(
+        PaymentResponse resp = new PaymentResponse(
                 payment.getTransactionId(),
                 payment.getPaymentMethod(),
                 payment.getOrderId(),
                 payment.getStatus(),
                 payment.getAmount()
         );
-        paymentProducer.sendPaymentConfirmation(paymentResponse);
-        return ResponseEntity.ok(paymentResponse);
+        paymentProducer.sendPaymentConfirmation(resp);
+        return ResponseEntity.ok(resp);
     }
 
     @PostMapping("/create/{method}")
-    public RedirectView createPayment(
-            @PathVariable("method") String method,
-            @RequestBody CreatePaymentDto createPaymentDto
+    public ResponseEntity<String> createPayment(
+            @PathVariable String method,
+            @RequestBody CreatePaymentDto dto
     ) {
-        orderId = createPaymentDto.getOrderId();
-        paymentPaypal =  paymentFactory.getPaymentMethod(method);
-        System.out.println("Get amount: " + createPaymentDto.getAmount());
-        createPaymentDto.setAmount(createPaymentDto.getAmount());
-        createPaymentDto.setOrderId(createPaymentDto.getOrderId());
-        try {
-            System.out.println("SuccessUrl: " + successUrl);
-            System.out.println("CancelUrl: " + cancelUrl);
-
-            double amount = createPaymentDto.getAmount();
-
-            if (amount <= 0) {
-                return new RedirectView("/payment/error?message=Invalid amount");
-            }
-
-            BigDecimal formattedAmount = new BigDecimal(amount).setScale(2, RoundingMode.HALF_UP);
-
-            Payment payment = paymentPaypal.createPayments(
-                    amount,
-                    "USD",
-                    "paypal",
-                    "sale",
-                    "Pay by Paypal",
-                    cancelUrl,
-                    successUrl
-            );
-            for (Links link : payment.getLinks()) {
-                if (link.getRel().equals("approval_url")) {
-
-                    Payments payments = new Payments();
-
-                    System.out.println("PaymentId 1 : " + payment.getId());
-
-                    payments.setAmount(amount);
-                    payments.setPaymentMethod(createPaymentDto.getPaymentMethod());
-                    payments.setTransactionId(payment.getId());
-                    payments.setStatus("pending");
-                    payments.setOrderId(createPaymentDto.getOrderId());
-
-                    Payments newPayment = paymentService.createPayment(payments);
-
-                    return new RedirectView(link.getHref());
-                }
-            }
-        } catch (PayPalRESTException e) {
-            log.error(e.getMessage());
+        double amount = dto.getAmount();
+        if (amount <= 0) {
+            return ResponseEntity.badRequest().body("Invalid amount");
         }
-        return new RedirectView("/payment/error");
+
+        try {
+            // 1. Khởi tạo processor và tạo Payment trên PayPal
+            IPayment processor = paymentFactory.getPaymentMethod(method);
+            Payment payment = processor.createPayments(
+                    amount, "USD", "paypal", "sale",
+                    "Pay by Paypal", cancelUrl, successUrl
+            );
+
+            // 2. Lấy link approval_url
+            String approvalLink = payment.getLinks().stream()
+                    .filter(l -> "approval_url".equals(l.getRel()))
+                    .findFirst()
+                    .map(Links::getHref)
+                    .orElse(null);
+
+            if (approvalLink == null) {
+                return ResponseEntity
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Approval URL not found");
+            }
+
+            // 3. Lưu Payment entity (giữ method và orderId để callback)
+            Payments entity = new Payments();
+            entity.setAmount(amount);
+            entity.setPaymentMethod(method);
+            entity.setTransactionId(payment.getId());
+            entity.setStatus("pending");
+            entity.setOrderId(dto.getOrderId());
+            paymentService.createPayment(entity);
+
+            // 4. Trả về link cho client redirect
+            return ResponseEntity.ok(approvalLink);
+
+        } catch (PayPalRESTException e) {
+            log.error("PayPalRESTException: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Payment creation failed");
+        }
     }
 
     @GetMapping("/success")
-    public ModelAndView paymentSuccess (
+    public ModelAndView paymentSuccess(
             @RequestParam("paymentId") String paymentId,
-            @RequestParam("PayerID") String payerId
+            @RequestParam("PayerID")   String payerId
     ) {
-        System.out.println("PaymentId: " + paymentId);
-        Payments checkPayment = paymentService.findPaymentByTransactionId(paymentId);
-        try {
-            Payment payment = paymentPaypal.executePayment(paymentId, payerId);
-            if (payment.getState().equals("approved")) {
-                checkPayment.setStatus("approved");
-                UpdatePaymentDto updatePaymentDto = new UpdatePaymentDto();
-                updatePaymentDto.setStatus("paid");
-                updatePaymentDto.setOrderId(orderId);
-                paymentService.updatePayment(checkPayment.getId(), updatePaymentDto);
-                return new ModelAndView("payment_success");
-            }
-        } catch (PayPalRESTException e) {
-            log.error(e.getMessage());
+        log.info("Callback /success với paymentId={}, payerId={}", paymentId, payerId);
+
+        // 1. Tìm record đã lưu
+        Payments existing = paymentService.findPaymentByTransactionId(paymentId);
+        if (existing == null) {
+            log.error("Không tìm thấy payment cho transactionId={}", paymentId);
             return new ModelAndView("payment_error");
         }
+
+        // 2. Lấy processor dựa trên method đã lưu
+        IPayment processor = paymentFactory.getPaymentMethod(existing.getPaymentMethod());
+        if (processor == null) {
+            log.error("Không khởi tạo được processor cho method={}", existing.getPaymentMethod());
+            return new ModelAndView("payment_error");
+        }
+
+        try {
+            // 3. Thực thi thanh toán
+            Payment payment = processor.executePayment(paymentId, payerId);
+            if ("approved".equalsIgnoreCase(payment.getState())) {
+                log.info("Payment {} approved", paymentId);
+
+                // 4. Cập nhật trạng thái
+                existing.setStatus("approved");
+                UpdatePaymentDto updateDto = new UpdatePaymentDto();
+                updateDto.setStatus("paid");
+                updateDto.setOrderId(existing.getOrderId());
+                paymentService.updatePayment(existing.getId(), updateDto);
+
+                return new ModelAndView("payment_success");
+            } else {
+                log.warn("Payment {} not approved (state={})", paymentId, payment.getState());
+            }
+        } catch (PayPalRESTException e) {
+            log.error("Lỗi executePayment: {}", e.getMessage(), e);
+        }
+
         return new ModelAndView("payment_error");
     }
 
@@ -168,25 +156,28 @@ public class PaymentController {
     }
 
     @GetMapping("/orderId/{id}")
-    public ResponseEntity<Payments> getPaymentByOrderId(@PathVariable("id") Long id) {
+    public ResponseEntity<Payments> getPaymentByOrderId(@PathVariable Long id) {
         return ResponseEntity.ok(paymentService.findPaymentByOrderId(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Payments> updatePayment(@PathVariable Long id, @RequestBody UpdatePaymentDto updatePaymentDto) {
-        return ResponseEntity.ok(paymentService.updatePayment(id, updatePaymentDto));
+    public ResponseEntity<Payments> updatePayment(
+            @PathVariable Long id,
+            @RequestBody UpdatePaymentDto dto
+    ) {
+        return ResponseEntity.ok(paymentService.updatePayment(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Payments> deletePayment(@PathVariable Long id) {
+    public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
         paymentService.deletePayment(id);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok().build();
     }
 
-    @GetMapping("all")
+    @GetMapping("/all")
     public ResponseEntity<PagedResponse<Payments>> getAllPayments(
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "limit", defaultValue = "10") int limit
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int limit
     ) {
         return ResponseEntity.ok(paymentService.getAllPayments(page, limit));
     }
@@ -197,18 +188,18 @@ public class PaymentController {
     }
 
     @GetMapping("/service/{orderId}")
-    public ResponseEntity<PaymentResponse> getPaymentByIdForMicroservices(@PathVariable Long orderId) {
-        Payments payment = paymentService.findPaymentByOrderId(orderId);
-        System.out.println("Payment information: " + payment);
-        PaymentResponse paymentResponse = new PaymentResponse(
-                payment.getTransactionId(),
-                payment.getPaymentMethod(),
-                payment.getOrderId(),
-                payment.getStatus(),
-                payment.getAmount()
+    public ResponseEntity<PaymentResponse> getPaymentForMicroservices(
+            @PathVariable Long orderId
+    ) {
+        Payments p = paymentService.findPaymentByOrderId(orderId);
+        PaymentResponse resp = new PaymentResponse(
+                p.getTransactionId(),
+                p.getPaymentMethod(),
+                p.getOrderId(),
+                p.getStatus(),
+                p.getAmount()
         );
-        System.out.println("PaymentResponse: " + paymentResponse);
-        return ResponseEntity.ok(paymentResponse);
+        log.info("PaymentResponse: {}", resp);
+        return ResponseEntity.ok(resp);
     }
-
 }
