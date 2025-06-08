@@ -113,6 +113,7 @@ public class UserService {
         // 1. Lấy user trong MySQL
         Users user = userRepository.findOneByKeycloakId(keycloakId);
         if (user == null) {
+            logger.error("Error fetching user from Keycloak: {}");
             throw new NotFoundException("User not found in MySQL");
         }
 
@@ -124,6 +125,7 @@ public class UserService {
                     .get(keycloakId)
                     .toRepresentation();
         } catch (Exception e) {
+            logger.error("Error fetching user from Keycloak: {}", e.getMessage());
             throw new NotFoundException("User not found in Keycloak with ID: " + keycloakId);
         }
 
@@ -245,6 +247,7 @@ public class UserService {
                     .build();
 
         } catch (Exception e) {
+            logger.error("Error fetching users from Keycloak: {}", e.getMessage());
             throw new RuntimeException("Failed to get users from Keycloak", e);
         }
     }
@@ -272,6 +275,7 @@ public class UserService {
                     .get(keycloakId)
                     .toRepresentation();
         } catch (Exception e) {
+            logger.error("Error fetching user from Keycloak: {}", e.getMessage());
             throw new NotFoundException("User not found in Keycloak with ID: " + keycloakId);
         }
 
@@ -352,6 +356,7 @@ public class UserService {
                 userResource.resetPassword(cred);
             }
         } catch (Exception e) {
+            logger.error("Error updating user in Keycloak: {}", e.getMessage());
             throw new RuntimeException("Update failed", e);
         }
     }
@@ -387,8 +392,10 @@ public class UserService {
             }
 
         } catch (NotFoundException e) {
+            logger.error("User not found in Keycloak: {}", e.getMessage());
             throw new NotFoundException("User not found in Keycloak with ID: " + keycloakId);
         } catch (Exception e) {
+            logger.error("Failed to delete user in Keycloak: {}", e.getMessage());
             throw new RuntimeException("Failed to delete user in Keycloak", e);
         }
     }
