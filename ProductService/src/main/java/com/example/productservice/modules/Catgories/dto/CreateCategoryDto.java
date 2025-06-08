@@ -9,4 +9,5 @@ import lombok.*;
 @Builder
 public class CreateCategoryDto {
     private String name;
+    private Integer count;
 }

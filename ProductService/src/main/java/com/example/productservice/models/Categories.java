@@ -18,6 +18,9 @@ public class Categories extends AbstractModel {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private Integer count;
+
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Products> products;
