@@ -25,6 +25,9 @@ def image_to_embedding(image_bytes: bytes):
 
     response = requests.post("https://api.jina.ai/v1/embeddings", headers=headers, data=json.dumps(payload))
 
+    print("Response status code:", response.status_code)
+    print("Response body:", response.text)
+
     if response.status_code == 200:
         result = response.json()
         embedding = result["data"][0].get("embedding")

@@ -8,4 +8,5 @@ app.include_router(menu_router)
 
 @app.get("/recommend/search-similar")
 def search_similar_food():
-    return {"message": "search-similar endpoint is working"}
+    return "search-similar endpoint is working"
+

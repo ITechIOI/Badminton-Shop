@@ -187,7 +187,7 @@ services:
       - PINECONE_ENV=us-east-1
       - PINECONE_INDEX=badminton
       - NESTJS_MENU_ENDPOINT=http://localhost:8222/products/products/all-no-paginate
-      - JINA_API_TOKEN=jina_a3af64c8f3de45e3af0b040ba8d697ef-zZHaVUTWHLhl6E0QkRjm3a5kb4O
+      - JINA_API_TOKEN=jina_c1a010084b044840a2f3f4627e1b1bf81zPiEMAuM6Pba1eZgzllpfurtUen
 
   behavior-service:
     build: ./UserBehaviorService
