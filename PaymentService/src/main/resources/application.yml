@@ -29,8 +29,8 @@ paypal:
     id: AcbmqATxBNYSNscNEdozkx40CnBkjNSsNpwiF2vpvM-GccRXEUg3o2fCmssSGsWyk6klbEAm5AFaivNs
     secret: EJ4g2fCwRj7YrjWyGG9CX2uqar1mugs7wyed4tDG2CzpxuhF7x5JUP2-BbZos-JYC4p3G-pkdH2RA8Nm
   mode: sandbox
-  SUCCESS_URL: http://localhost:8004/payment/success
-  CANCEL_URL: http://localhost:8004/payment/cancel
+  SUCCESS_URL: http://localhost:8222/payment/success
+  CANCEL_URL: http://localhost:8222/payment/cancel
 
 application:
   config:
