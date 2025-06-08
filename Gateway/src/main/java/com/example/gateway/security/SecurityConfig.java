@@ -52,7 +52,8 @@ public class SecurityConfig {
                         "/actuator/prometheus",
                         "/payment/success/**",
                         "/payment/cancel/**",
-                        "/payment/error/**"
+                        "/payment/error/**",
+                        "/recommend/predict/**"
                 ))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex.anyExchange().permitAll());
@@ -78,7 +79,7 @@ public class SecurityConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:5500"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
 

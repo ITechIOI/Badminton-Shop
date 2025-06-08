@@ -177,6 +177,11 @@ services:
       - microservices-net
     depends_on:
       - config-server
+      - discovery-server
+      - keycloak
+      - redis
+      - elasticsearch
+      - logstash
     environment:
       - PINECONE_API_KEY=pcsk_6ngBzM_5ueoEuEehZZXiQZGiFJDWaAavcMizu9qSesb4uroh9hdykvYPfXCxFR7HVuSp69
       - PINECONE_ENV=us-east-1
