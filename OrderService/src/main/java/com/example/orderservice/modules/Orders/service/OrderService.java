@@ -95,7 +95,12 @@ public class OrderService {
     }
 
     public Orders createOrder(CreateOrderDto createOrderDto) {
-        Discounts discount = discountService.findDiscountById(createOrderDto.getDiscountId());
+        Discounts discount;
+        if (createOrderDto.getDiscountId() != null) {
+            discount = discountService.findDiscountById(createOrderDto.getDiscountId());
+        } else {
+            discount = null;
+        }
         try {
             UserResponse userResponse = userClient.getUserById(createOrderDto.getUserId()).getBody();
         } catch (FeignException.FeignClientException e) {
@@ -116,8 +121,9 @@ public class OrderService {
                 order.getAddress(),
                 order.getPhone(),
                 order.getUserId(),
-                order.getDiscount().getId()
+                order.getDiscount() != null ? order.getDiscount().getId() : null
         );
+
 
         Orders savedOrder = orderRepository.save(order);
         for (int i = 0; i < createOrderDto.getDetails().size(); i++) {
@@ -134,7 +140,6 @@ public class OrderService {
             item.setQuantity(createOrderDto.getDetails().get(i).getQuantity());
             item.setPrice(productResponse.price());
             OrderDetails savedOrderDetail = orderDetailRepository.save(item);
-            System.out.println("Order detail created: " + savedOrderDetail.toString());
         }
 
         orderProducer.sendOrderConfirmation(response);

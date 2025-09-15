@@ -44,6 +44,7 @@ public class CategoryService {
         if (categories.getContent().isEmpty()) {
             throw new NotFoundException("No category found");
         }
+        System.out.print("List of categories: " + categories.getContent());
         return new PagedResponse<Categories>(categories.getContent(), categories.getTotalPages(), categories.getTotalElements());
     }
 

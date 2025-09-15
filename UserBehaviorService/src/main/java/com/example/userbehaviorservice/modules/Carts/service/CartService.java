@@ -36,10 +36,19 @@ public class CartService {
         if (product == null) {
             throw new NotFoundException("Product not found!");
         }
-        cart.setProductId(createCartDto.getProductId());
-        cart.setUserId(createCartDto.getUserId());
-        cart.setQuantity(createCartDto.getQuantity());
-        return cartRepository.save(cart);
+
+        // Kiểm tra xem giỏ hàng đã có sản phẩm này chưa
+        Carts existingCart = cartRepository.findByUserIdAndProductId(createCartDto.getUserId(), createCartDto.getProductId()).orElse(null);
+        if (existingCart != null) {
+            // Nếu có, cập nhật số lượng sản phẩm
+            existingCart.setQuantity(existingCart.getQuantity() + createCartDto.getQuantity());
+            return cartRepository.save(existingCart);
+        } else {
+            cart.setProductId(createCartDto.getProductId());
+            cart.setUserId(createCartDto.getUserId());
+            cart.setQuantity(createCartDto.getQuantity());
+            return cartRepository.save(cart);
+        }
     }
 
     public Carts findCartById(Long id) {

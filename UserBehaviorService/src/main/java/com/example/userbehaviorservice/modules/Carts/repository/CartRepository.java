@@ -16,6 +16,10 @@ public interface CartRepository extends JpaRepository<Carts, Long> {
     @Query("SELECT u FROM Carts u WHERE u.id = :id AND u.deletedAt IS NULL")
     public Optional<Carts> findOneById(Long id);
 
+    // Tìm giỏ hàng theo userId và productId chưa bị xóa
+    @Query("SELECT u FROM Carts u WHERE u.userId = :userId AND u.productId = :productId AND u.deletedAt IS NULL")
+    public Optional<Carts> findByUserIdAndProductId(Long userId, Long productId);
+
     @Query("SELECT u FROM Carts u WHERE u.userId = :userId AND u.deletedAt IS NULL")
     public Page<Carts> findByUserId(Long userId, Pageable pageable);
 

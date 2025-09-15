@@ -44,16 +44,23 @@ public class SecurityConfig {
                         "/users/users/id/**",
                         "/users/**",
                         "/orders/order-details/service/**",
-                        "/orders/orders/service/**",
+                        "/orders/discounts/**",
                         "/products/products/services/**",
                         "/products/products/**",
+                        "/products/categories/**",
+                        "/products/flash-sale/**",
+                        "/products/flash-sale-detail/**",
                         "/notifications/**",
                         "/ws/**",
                         "/actuator/prometheus",
                         "/payment/success/**",
                         "/payment/cancel/**",
                         "/payment/error/**",
-                        "/recommend/predict/**"
+                        "/recommend/predict/**",
+                        "/behaviors/**",
+                        "/products/cloudinary/**",
+                        "orders/orders/**",
+                        "orders/order-details/**"
                 ))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex.anyExchange().permitAll());

@@ -8,6 +8,7 @@ import com.example.orderservice.modules.OrderDetails.dto.UpdateOrderDetailDto;
 import com.example.orderservice.modules.OrderDetails.dto.output.RawTopProductDto;
 import com.example.orderservice.modules.OrderDetails.dto.output.TopProductDto;
 import com.example.orderservice.modules.OrderDetails.repository.OrderDetailRepository;
+import com.example.orderservice.modules.Orders.dto.OrderResponse;
 import com.example.orderservice.modules.Orders.service.OrderService;
 import com.example.orderservice.modules.feign.ProductFeign.ProductClient;
 import com.example.orderservice.modules.feign.ProductFeign.ProductResponse;
@@ -33,20 +34,30 @@ public class OrderDetailService implements OrderDetailServiceInterface {
     private final ProductClient productClient;
 
     public OrderDetails createDetails(CreateOrderDetailDto createOrderDetailDto) {
+        Orders orderResponse = orderService.findOrderById(createOrderDetailDto.getOrderId());
         OrderDetails orderDetails = new OrderDetails();
+
         ProductResponse product;
         try {
             product = productClient.getProductById(createOrderDetailDto.getProductId()).getBody();
         } catch (Exception e) {
             throw new NotFoundException("Product not found with id: " + createOrderDetailDto.getProductId());
         }
+
         orderDetails.setProudctId(createOrderDetailDto.getProductId());
         orderDetails.setQuantity(createOrderDetailDto.getQuantity());
-        orderDetails.setPrice(product.price());
-        Orders order = orderService.findOrderById(createOrderDetailDto.getOrderId());
-        orderDetails.setOrder(order);
+
+        Integer price = product.price();
+        if (orderResponse.getDiscount() != null) {
+            price = price - (price * orderResponse.getDiscount().getPercent() / 100);
+        }
+
+        orderDetails.setPrice(price);
+        orderDetails.setOrder(orderResponse);
+
         return orderRepository.save(orderDetails);
     }
+
 
     @Override
     public PagedResponse<OrderDetails> findDetailsByOrderId(Long orderId, int page, int limit) {

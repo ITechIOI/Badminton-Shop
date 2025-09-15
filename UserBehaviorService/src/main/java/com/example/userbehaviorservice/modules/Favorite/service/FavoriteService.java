@@ -17,6 +17,12 @@ public class FavoriteService {
     private final FavoriteRepository favoriteRepository;
 
     public Favorites createFavorite(CreateFavoriteDto createFavoriteDto) {
+
+        Favorites existingFavorite = favoriteRepository.findByUserIdAndProductId(createFavoriteDto.getUserId(), createFavoriteDto.getProductId());
+        if (existingFavorite != null) {
+            throw new IllegalArgumentException("Product already in favorites.");
+        }
+
         Favorites favorite = new Favorites();
         favorite.setUserId(createFavoriteDto.getUserId());
         favorite.setProductId(createFavoriteDto.getProductId());

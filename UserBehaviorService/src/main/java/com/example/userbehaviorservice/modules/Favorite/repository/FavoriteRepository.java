@@ -23,6 +23,10 @@ public interface FavoriteRepository extends JpaRepository<Favorites, Long> {
     @Transactional
     @Query("UPDATE Favorites f SET f.deletedAt = CURRENT_TIMESTAMP WHERE f.id = ?1 AND f.deletedAt IS NULL")
     void deleteByUserIdAndProductId(Long id);
+
+    // Tìm yêu thích theo userId và productId chưa bị xóa
+    @Query("SELECT f FROM Favorites f WHERE f.userId = :userId AND f.productId = :productId AND f.deletedAt IS NULL")
+    Favorites findByUserIdAndProductId(Long userId, Long productId);
 }
 
 
