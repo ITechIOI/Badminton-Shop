@@ -18,6 +18,9 @@ public class Flash_Sale extends AbstractModel {
     private String name;
 
     @Column(nullable = true)
+    private String description;
+
+    @Column(nullable = true)
     @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime startTime;
 

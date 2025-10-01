@@ -6,6 +6,7 @@ import com.example.orderservice.models.Reviews;
 import com.example.orderservice.modules.Orders.service.OrderService;
 import com.example.orderservice.modules.Reviews.dto.CreateReviewDto;
 import com.example.orderservice.modules.Reviews.dto.output.ProductRatingDto;
+import com.example.orderservice.modules.Reviews.dto.output.ProductRatingRecord;
 import com.example.orderservice.modules.Reviews.repository.ReviewRepository;
 import com.example.orderservice.modules.feign.ProductFeign.ProductClient;
 import com.example.orderservice.modules.feign.UserFeign.UserClient;
@@ -43,6 +44,7 @@ public class ReviewService {
         review.setContent(createReviewDto.getContent());
         review.setRating(createReviewDto.getRating());
         review.setUserId(createReviewDto.getUserId());
+        review.setProductId(createReviewDto.getProductId());
         review.setOrders(order);
 
         return reviewRepository.save(review);
@@ -109,11 +111,11 @@ public class ReviewService {
     }
 
     // Tìm kiếm sản phẩm dựa trên rating đánh giá
-    public List<ProductRatingDto> findProductsByRatingThreshold(Integer rating) {
+    public List<ProductRatingRecord> findProductsByRatingThreshold(Integer rating) {
         if (rating < 1 || rating > 5) {
             throw new NotFoundException("Rating must be between 1 and 5");
         }
-        List<ProductRatingDto> reviewPage = reviewRepository.findProductByRating(rating);
+        List<ProductRatingRecord> reviewPage = reviewRepository.findProductByRating(rating);
         System.out.println("Product rating: " + reviewPage);
 
         if (reviewPage.isEmpty()) {
@@ -142,6 +144,7 @@ public class ReviewService {
         }
         review.setContent(createReviewDto.getContent());
         review.setRating(createReviewDto.getRating());
+        review.setProductId(createReviewDto.getProductId());
         return reviewRepository.save(review);
     }
 

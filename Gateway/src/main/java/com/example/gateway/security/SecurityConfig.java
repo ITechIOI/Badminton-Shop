@@ -43,6 +43,7 @@ public class SecurityConfig {
                         "/products/actuator/**",
                         "/users/users/id/**",
                         "/users/**",
+                        "/orders/reviews/**",
                         "/orders/order-details/service/**",
                         "/orders/discounts/**",
                         "/products/products/services/**",
@@ -60,7 +61,8 @@ public class SecurityConfig {
                         "/behaviors/**",
                         "/products/cloudinary/**",
                         "orders/orders/**",
-                        "orders/order-details/**"
+                        "orders/order-details/**",
+                        "/payment/**"
                 ))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex.anyExchange().permitAll());

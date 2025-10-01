@@ -32,6 +32,7 @@ public class OrderDetailService implements OrderDetailServiceInterface {
     private final OrderDetailRepository orderRepository;
     private final OrderService orderService;
     private final ProductClient productClient;
+    private final OrderDetailRepository orderDetailRepository;
 
     public OrderDetails createDetails(CreateOrderDetailDto createOrderDetailDto) {
         Orders orderResponse = orderService.findOrderById(createOrderDetailDto.getOrderId());

@@ -21,4 +21,7 @@ public class Reviews extends AbstractModel{
     @ManyToOne()
     @JoinColumn(name = "orderId", nullable = true)
     private Orders orders;
+
+    @Column(nullable = true)
+    private Long productId;
 }

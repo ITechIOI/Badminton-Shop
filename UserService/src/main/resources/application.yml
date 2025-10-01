@@ -3,6 +3,12 @@ spring:
     name: USERSERVICE # Đảm bảo tên ứng dụng khớp với Gateway và Eureka
   config:
     import: optional:configserver:http://config-server:8888
+
+#    # Vô hiệu hóa config server
+#  cloud:
+#    config:
+#      enabled: false
+
   datasource:
     url: jdbc:mysql://userservice-nguyenloan2000hbt-d1f9.h.aivencloud.com:14850/userservice?sslMode=REQUIRED
     username: avnadmin
@@ -19,6 +25,7 @@ spring:
         jwt:
           issuer-uri: http://keycloak:8080/realms/micro-service
           jwk-set-uri: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
+
 
 management:
   tracing:
@@ -40,6 +47,9 @@ eureka:
       prefer-ip-address: true # Đảm bảo sử dụng địa chỉ IP để tránh lỗi DNS
       lease-renewal-interval-in-seconds: 10
       lease-expiration-duration-in-seconds: 30
+
+#    # Vô hiệu hóa eureka server
+#    enabled: false
 
 logging:
   level:

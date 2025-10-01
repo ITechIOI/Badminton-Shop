@@ -44,13 +44,3 @@ public class PaymentConsumer {
 }
 
 
-//@Service
-//@RequiredArgsConstructor
-//@Slf4j
-//public class OrderConsumer {
-//    @KafkaListener(topics = "order-topic", groupId = "paymentGroup")
-//    public void consumeOrderSuccess (PaymentResponse paymentResponse) {
-//        System.out.println("Order confirmation received: {}" + paymentResponse);
-//    }
-//}
-

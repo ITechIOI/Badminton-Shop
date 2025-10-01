@@ -54,6 +54,23 @@ public class PaymentController {
             @PathVariable String method,
             @RequestBody CreatePaymentDto dto
     ) {
+
+        if (dto.getPaymentMethod().equals("cod")) {
+            // Lưu thông tin thanh toán mới và kết thúc hàm
+            System.out.println("Creating COD payment for orderId=" + dto.getOrderId());
+            Payments entity = new Payments();
+            entity.setAmount(dto.getAmount());
+            entity.setPaymentMethod("cod");
+            entity.setTransactionId("COD-" + System.currentTimeMillis());
+            entity.setStatus("pending");
+            entity.setOrderId(dto.getOrderId());
+            Payments payment = paymentService.createPayment(entity);
+
+            System.out.println( "Created COD payment: " + payment);
+
+            return ResponseEntity.ok("COD payment recorded");
+        }
+
         double amount = dto.getAmount();
         if (amount <= 0) {
             return ResponseEntity.badRequest().body("Invalid amount");

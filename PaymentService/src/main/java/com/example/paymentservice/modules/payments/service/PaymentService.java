@@ -27,6 +27,7 @@ public class PaymentService {
         System.out.println("Id of order" + payments.getOrderId());
         try {
             OrderResponse order = orderClient.getOrderById(payments.getOrderId()).getBody();
+            System.out.println("Order information: " + order.totalPrice());
         } catch (FeignException.FeignClientException e) {
             throw new RuntimeException("Order not found with id: " + payments.getOrderId());
         }

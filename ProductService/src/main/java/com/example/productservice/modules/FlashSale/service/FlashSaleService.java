@@ -24,6 +24,7 @@ public class FlashSaleService {
     public Flash_Sale createFlashSale(CreateFlashSaleDto createFlashSaleDto) {
         Flash_Sale flashSale = new Flash_Sale();
         flashSale.setName(createFlashSaleDto.getName());
+        flashSale.setDescription(createFlashSaleDto.getDescription());
         flashSale.setStartTime(createFlashSaleDto.getStartTime());
         flashSale.setEndTime(createFlashSaleDto.getEndTime());
 
@@ -57,6 +58,10 @@ public class FlashSaleService {
 
     public Flash_Sale updateFlashSale(Long id, UpdateFlashSaleDto updateFlashSaleDto) {
         Flash_Sale flashSale = findFlashSaleById(id);
+
+        if (updateFlashSaleDto.getDescription() != null) {
+            flashSale.setDescription(updateFlashSaleDto.getDescription());
+        }
 
         if (updateFlashSaleDto.getName() != null) {
             flashSale.setName(updateFlashSaleDto.getName());

@@ -3,6 +3,7 @@ package com.example.orderservice.modules.Reviews.controller;
 import com.example.orderservice.models.Reviews;
 import com.example.orderservice.modules.Reviews.dto.CreateReviewDto;
 import com.example.orderservice.modules.Reviews.dto.output.ProductRatingDto;
+import com.example.orderservice.modules.Reviews.dto.output.ProductRatingRecord;
 import com.example.orderservice.modules.Reviews.service.ReviewService;
 import com.example.orderservice.utils.PagedResponse;
 import lombok.AllArgsConstructor;
@@ -65,7 +66,7 @@ public class ReviewController {
     }
 
     @GetMapping("/product/rating/{rating}")
-    public ResponseEntity<List<ProductRatingDto>> getReviewByProductIdAndRating(
+    public ResponseEntity<List<ProductRatingRecord>> getReviewByProductIdAndRating(
             @PathVariable(value = "rating") Integer rating
     ) {
         return ResponseEntity.ok(reviewService.findProductsByRatingThreshold(rating));

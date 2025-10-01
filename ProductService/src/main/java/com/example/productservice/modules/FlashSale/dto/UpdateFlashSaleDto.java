@@ -14,6 +14,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class UpdateFlashSaleDto {
     private String name;
+    private String description;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 

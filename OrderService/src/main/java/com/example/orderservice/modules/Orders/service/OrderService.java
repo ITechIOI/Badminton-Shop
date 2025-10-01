@@ -4,6 +4,7 @@ import com.example.orderservice.kafka.OrderProducer;
 import com.example.orderservice.models.Discounts;
 import com.example.orderservice.models.OrderDetails;
 import com.example.orderservice.models.Orders;
+import com.example.orderservice.modules.Discounts.dto.UpdateDiscountDto;
 import com.example.orderservice.modules.Discounts.service.DiscountService;
 import com.example.orderservice.modules.OrderDetails.repository.OrderDetailRepository;
 import com.example.orderservice.modules.Orders.dto.CreateOrderDto;
@@ -98,6 +99,10 @@ public class OrderService {
         Discounts discount;
         if (createOrderDto.getDiscountId() != null) {
             discount = discountService.findDiscountById(createOrderDto.getDiscountId());
+            // Giảm số lượng mã giảm giá
+            UpdateDiscountDto updateDiscount = new UpdateDiscountDto();
+            updateDiscount.setCount(discount.getCount() - 1);
+            discountService.updateDiscount(discount.getId(), updateDiscount);
         } else {
             discount = null;
         }
@@ -160,7 +165,8 @@ public class OrderService {
                 orders.getAddress(),
                 orders.getPhone(),
                 orders.getUserId(),
-                orders.getDiscount().getId()
+                // Hãy chỉnh lại discount cho đúng nếu có thể null
+                orders.getDiscount() != null ? orders.getDiscount().getId() : null
         );
         return response;
     }
