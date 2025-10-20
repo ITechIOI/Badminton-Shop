@@ -1,19 +1,14 @@
 package com.example.userservice.modules.Users.service;
 
-import com.example.userservice.models.Roles;
 import com.example.userservice.models.Users;
-import com.example.userservice.modules.Roles.service.RoleService;
 import com.example.userservice.modules.Users.dto.CreateUserDto;
 import com.example.userservice.modules.Users.dto.UpdateUserDto;
 import com.example.userservice.modules.Users.dto.UserResponse;
 import com.example.userservice.modules.Users.repository.UserRepository;
 import com.example.userservice.utils.NotFoundException;
-import com.example.userservice.utils.NullAwareBeanUtilsBean;
 import com.example.userservice.utils.PagedResponse;
 import jakarta.ws.rs.core.Response;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.beanutils.BeanUtilsBean;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -21,9 +16,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -61,7 +53,7 @@ public class UserService {
     }
 
     public Users createUser(CreateUserDto dto) {
-        // 1. Tạo UserRepresentation như bạn đã làm
+        // 1. Tạo UserRepresentation
         UserRepresentation userRep = new UserRepresentation();
         userRep.setUsername(dto.getUsername());
         userRep.setEmail(dto.getEmail());
@@ -70,14 +62,14 @@ public class UserService {
         userRep.setLastName(dto.getLastName());
         userRep.setEmailVerified(true);
 
-// 2. Set custom attributes
+        // 2. Set custom attributes
         Map<String, List<String>> attributes = new HashMap<>();
         if (dto.getGender() != null) attributes.put("gender", List.of(dto.getGender()));
         if (dto.getAvatar() != null) attributes.put("avatar", List.of(dto.getAvatar()));
         if (dto.getPhone() != null) attributes.put("phone", List.of(dto.getPhone()));
         userRep.setAttributes(attributes);
 
-// 3. Gửi request tạo user
+        // 3. Gửi request tạo user
         Response response = realmResource().users().create(userRep);
         if (response.getStatus() != 201) {
             throw new RuntimeException("Failed to create user in Keycloak: " + response.getStatusInfo());
@@ -85,7 +77,7 @@ public class UserService {
         String location = response.getHeaderString("Location");
         String keycloakId = location.substring(location.lastIndexOf('/') + 1);
 
-// 4. Set mật khẩu
+        // 4. Set mật khẩu
         CredentialRepresentation passwordCred = new CredentialRepresentation();
         passwordCred.setTemporary(false);
         passwordCred.setType(CredentialRepresentation.PASSWORD);
@@ -96,17 +88,20 @@ public class UserService {
                 .get(keycloakId)
                 .resetPassword(passwordCred);
 
-// 5. Gán role (nếu có)
+        // 5. Gán role (nếu có)
         if (dto.getRoles() != null) {
             RoleRepresentation role = realmResource().roles().get(dto.getRoles()).toRepresentation();
             realmResource().users().get(keycloakId).roles().realmLevel().add(List.of(role));
+        } else {
+            // Gán role "user" mặc định nếu không có role nào được cung cấp
+            RoleRepresentation defaultRole = realmResource().roles().get("user").toRepresentation();
+            realmResource().users().get(keycloakId).roles().realmLevel().add(List.of(defaultRole));
         }
 
-// 6. Lưu xuống MySQL
+        // 6. Lưu xuống MySQL
         Users user = new Users();
         user.setKeycloakId(keycloakId);
         return userRepository.save(user);
-
     }
 
     public UserResponse getUserByKeycloakId(String keycloakId) {
@@ -161,8 +156,8 @@ public class UserService {
         String mainRole = null;
         if (realmRoles.contains("admin")) {
             mainRole = "admin";
-        } else if (realmRoles.contains("client")) {
-            mainRole = "client";
+        } else if (realmRoles.contains("user")) {
+            mainRole = "user";
         }
 
         // 6. Trả về DTO
@@ -179,6 +174,9 @@ public class UserService {
     }
 
     public PagedResponse<UserResponse> getAllUsers(int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Page must be >= 0 and limit must be > 0");
+        }
         try {
             // Lấy toàn bộ user từ Keycloak để lọc chính xác
             List<UserRepresentation> keycloakUsers = realmResource()
@@ -253,6 +251,9 @@ public class UserService {
     }
 
     public UserResponse getUserById(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("Invalid user ID");
+        }
         // 1. Lấy user trong MySQL
         Users user = userRepository.findOneById(userId);
         if (user == null) {
@@ -262,10 +263,6 @@ public class UserService {
         String keycloakId = user.getKeycloakId();
 
         System.out.println("Keycloak ID: " + keycloakId);
-
-        if (user == null) {
-            throw new NotFoundException("User not found in MySQL");
-        }
 
         // 2. Lấy thông tin user từ Keycloak
         UserRepresentation keycloakUser;
@@ -311,8 +308,8 @@ public class UserService {
         String mainRole = null;
         if (realmRoles.contains("admin")) {
             mainRole = "admin";
-        } else if (realmRoles.contains("client")) {
-            mainRole = "client";
+        } else if (realmRoles.contains("user")) {
+            mainRole = "user";
         }
 
         // 6. Trả về DTO
@@ -331,6 +328,9 @@ public class UserService {
     public void updateUser(String keycloakId, UpdateUserDto dto) {
         try {
             UserResource userResource = realmResource().users().get(keycloakId);
+            if (userResource == null) {
+                throw new NotFoundException("User not found in Keycloak with ID: " + keycloakId);
+            }
             UserRepresentation userRep = userResource.toRepresentation();
 
             // Update core fields
@@ -372,6 +372,9 @@ public class UserService {
 //    }
 
     public void deleteUser(String keycloakId) {
+        if (keycloakId == null || keycloakId.isBlank()) {
+            throw new IllegalArgumentException("Keycloak ID must not be null or empty");
+        }
 
         try {
             // 1. Lấy user từ Keycloak theo keycloakId
@@ -389,6 +392,8 @@ public class UserService {
             Users userMySQL = userRepository.findOneByKeycloakId(keycloakId);
             if (userMySQL != null) {
                 userRepository.softDeleteById(userMySQL.getId());
+            } else {
+                logger.warn("User with Keycloak ID {} not found in MySQL, skipping MySQL deletion", keycloakId);
             }
 
         } catch (NotFoundException e) {
