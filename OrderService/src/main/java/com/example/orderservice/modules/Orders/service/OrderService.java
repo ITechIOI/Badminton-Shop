@@ -30,7 +30,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-
+import org.springframework.transaction.annotation.Transactional;
 @Service
 @AllArgsConstructor
 public class OrderService {
@@ -95,8 +95,13 @@ public class OrderService {
         return response;
     }
 
+    @Transactional
     public Orders createOrder(CreateOrderDto createOrderDto) {
         Discounts discount;
+        // Kiểm tra các giá trị số
+        if (createOrderDto.getTotalPrice() < 0) {
+            throw new IllegalArgumentException("Total price must be non-negative");
+        }
         if (createOrderDto.getDiscountId() != null) {
             discount = discountService.findDiscountById(createOrderDto.getDiscountId());
             // Giảm số lượng mã giảm giá
@@ -172,12 +177,21 @@ public class OrderService {
     }
 
     public Orders findOrderById(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid order ID");
+        }
         return orderRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Order not found"));
     }
 
     public PagedResponse<Orders> findOrderByUserId(Long userId, int page, int limit) {
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("Invalid user ID");
+        }
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
-        Page<Orders> orders = orderRepository.findOneByUserId(userId, pageable);
+        Page<Orders> orders = orderRepository.findOrderByUserId(userId, pageable);
         if (orders.getContent().isEmpty()) {
             throw new NotFoundException("Order not found");
         }
@@ -189,6 +203,9 @@ public class OrderService {
     }
 
     public PagedResponse<Orders> getAllOrders(int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<Orders> orders = orderRepository.findAllOrders(pageable);
         if (orders.getContent().isEmpty()) {
@@ -198,6 +215,12 @@ public class OrderService {
     }
 
     public PagedResponse<Orders> findOrderByStatus(String status, int page, int offset) {
+        if (status == null || status.isEmpty()) {
+            throw new IllegalArgumentException("Invalid status");
+        }
+        if (page < 0 || offset <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, offset);
         Page<Orders> orders = orderRepository.findOrdersByStatus(status, pageable);
         if (orders.getContent().isEmpty()) {
@@ -211,6 +234,15 @@ public class OrderService {
     }
 
     public PagedResponse<OrderByDateDto> orderStatisticsByTime(Integer year, Integer month, Integer day, int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
+        if ((month != null && (month < 1 || month > 12)) ||
+            (day != null && (day < 1 || day > 31)) ||
+            (year != null && year < 0)) {
+            throw new IllegalArgumentException("Invalid date parameters");
+        }
+
         Pageable pageable = PageRequest.of(page, limit);
         Page<Orders> ordersPage;
 
@@ -286,6 +318,9 @@ public class OrderService {
     }
 
     public void deleteOrder(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid order ID");
+        }
         Orders order = orderRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Order not found"));
         orderRepository.softDeleteById(id);
     }

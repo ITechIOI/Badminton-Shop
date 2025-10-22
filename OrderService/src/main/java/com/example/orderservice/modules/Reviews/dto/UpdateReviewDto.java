@@ -12,11 +12,8 @@ import lombok.Setter;
 public class UpdateReviewDto {
     private String content;
     private Integer rating;
-    private Long userId;
-    private Long orderId;
-    private Long productId;
 
     public String toString() {
-        return "CreateReviewDto(content=" + this.getContent() + ", rating=" + this.getRating() + ", userId=" + this.getUserId() + ", productId=" + this.getOrderId() + ")";
+        return "CreateReviewDto(content=" + this.getContent() + ", rating=" + this.getRating();
     }
 }

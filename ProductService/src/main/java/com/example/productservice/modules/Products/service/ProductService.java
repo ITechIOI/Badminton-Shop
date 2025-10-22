@@ -11,6 +11,7 @@ import com.example.productservice.utils.NotFoundException;
 import com.example.productservice.utils.NullAwareBeanUtilsBean;
 import com.example.productservice.utils.PagedResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.beanutils.BeanUtilsBean;
@@ -32,7 +33,10 @@ public class ProductService {
     private final CategoryService categoryService;
     private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
 
-    public Products createProduct(CreateProductDto createProductDto) {
+    public Products createProduct(@Valid CreateProductDto createProductDto) {
+        if (createProductDto.getQuantity() < 0 || createProductDto.getPrice() < 0) {
+            throw new IllegalArgumentException("Quantity and Price must be non-negative");
+        }
         Categories category =  categoryService.findCategoryById(createProductDto.getCategoryId());
         if (category == null) {
             throw new NotFoundException("Category not found");
@@ -52,7 +56,9 @@ public class ProductService {
     }
 
     public Products findProductById(Long id) {
-        logger.info("Product created: {}", productRepository.findOneById(id));
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid product ID");
+        }
         return productRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Product not found"));
     }
 
@@ -76,6 +82,9 @@ public class ProductService {
             fallbackMethod = "fallbackGetAllProducts"
     )
     public PagedResponse<Products> getAllProducts(int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<Products> products = productRepository.findAllProducts(pageable);
         if (products.getContent().isEmpty()) {
@@ -97,7 +106,11 @@ public class ProductService {
 
     public PagedResponse<Products> getProductsByName(String name, int page, int limit) {
         if (name == null || name.trim().isEmpty()) {
-            throw new BadRequestException("Keyword cannot be empty");
+            throw new IllegalArgumentException("Keyword cannot be empty");
+        }
+
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
         }
 
         String searchPattern = "%" + name.trim() + "%";
@@ -112,6 +125,12 @@ public class ProductService {
     }
 
     public PagedResponse<Products> getProductsByBrand(String brand, int page, int limit) {
+        if (brand == null || brand.trim().isEmpty()) {
+            throw new IllegalArgumentException("Brand cannot be empty");
+        }
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<Products> products = productRepository.findProductsByBrand(brand, pageable);
         if (products.getContent().isEmpty()) {
@@ -121,6 +140,9 @@ public class ProductService {
     }
 
     public PagedResponse<Products> getProductsByCategoryId(Long categoryId, int page, int limit) {
+        if (categoryId == null || categoryId <= 0) {
+            throw new IllegalArgumentException("Invalid category ID");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<Products> products = productRepository.findByCategoryId(categoryId, pageable);
         if (products.getContent().isEmpty()) {
@@ -140,6 +162,17 @@ public class ProductService {
 
 
     public Products updateProduct(Long id, UpdateProductDto updateProductDto) {
+        // Kiểm tra id
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid product ID");
+        }
+        // Kiểm tra các trường số
+        if (updateProductDto.getQuantity() != null && updateProductDto.getQuantity() < 0) {
+            throw new IllegalArgumentException("Quantity must be non-negative");
+        }
+        if (updateProductDto.getPrice() != null && updateProductDto.getPrice() < 0) {
+            throw new IllegalArgumentException("Price must be non-negative");
+        }
         Products product = findProductById(id);
         try {
             BeanUtilsBean notNull = new NullAwareBeanUtilsBean();
@@ -155,6 +188,9 @@ public class ProductService {
     }
 
     public void deleteProduct(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid product ID");
+        }
         Products product = findProductById(id);
         productRepository.softDeleteById(product.getId());
     }

@@ -2,6 +2,7 @@ package com.example.orderservice.modules.Reviews.controller;
 
 import com.example.orderservice.models.Reviews;
 import com.example.orderservice.modules.Reviews.dto.CreateReviewDto;
+import com.example.orderservice.modules.Reviews.dto.UpdateReviewDto;
 import com.example.orderservice.modules.Reviews.dto.output.ProductRatingDto;
 import com.example.orderservice.modules.Reviews.dto.output.ProductRatingRecord;
 import com.example.orderservice.modules.Reviews.service.ReviewService;
@@ -79,7 +80,7 @@ public class ReviewController {
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<Reviews> updateReview(@PathVariable("id") Long id, @RequestBody CreateReviewDto createReviewDto) {
+    public ResponseEntity<Reviews> updateReview(@PathVariable("id") Long id, @RequestBody UpdateReviewDto createReviewDto) {
         return ResponseEntity.ok(reviewService.updateReview(id, createReviewDto));
     }
 

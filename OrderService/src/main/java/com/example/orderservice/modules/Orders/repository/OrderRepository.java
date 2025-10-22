@@ -21,7 +21,7 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
     public Orders findOneByIdForUser(Long id);
 
     @Query("SELECT u FROM Orders u WHERE u.userId = :userId AND u.deletedAt IS NULL")
-    public Page<Orders> findOneByUserId(Long userId, Pageable pageable);
+    public Page<Orders> findOrderByUserId(Long userId, Pageable pageable);
 
     @Query("SELECT u FROM Orders u WHERE u.status = :status AND u.deletedAt IS NULL")
     public Page<Orders> findOrdersByStatus(String status, Pageable pageable);

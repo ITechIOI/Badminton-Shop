@@ -100,6 +100,10 @@ public class UserService {
         if (dto.getRoles() != null) {
             RoleRepresentation role = realmResource().roles().get(dto.getRoles()).toRepresentation();
             realmResource().users().get(keycloakId).roles().realmLevel().add(List.of(role));
+        } else {
+            // Gán role mặc định "client"
+            RoleRepresentation defaultRole = realmResource().roles().get("user").toRepresentation();
+            realmResource().users().get(keycloakId).roles().realmLevel().add(List.of(defaultRole));
         }
 
 // 6. Lưu xuống MySQL
@@ -372,6 +376,10 @@ public class UserService {
 //    }
 
     public void deleteUser(String keycloakId) {
+
+        if (keycloakId == null || keycloakId.isEmpty()) {
+            throw new IllegalArgumentException("Invalid Keycloak ID");
+        }
 
         try {
             // 1. Lấy user từ Keycloak theo keycloakId
