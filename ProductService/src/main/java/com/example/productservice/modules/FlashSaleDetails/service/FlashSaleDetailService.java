@@ -27,8 +27,18 @@ public class FlashSaleDetailService {
     private final ProductService productService;
 
     public Flash_Sale_Details createFlashSaleDetail(CreateFlashSaleDetailDto flashSaleDetails) {
+        if (flashSaleDetails.getOriginalPrice() < 0 || flashSaleDetails.getSalePrice() < 0 || flashSaleDetails.getQuantity() < 0) {
+            throw new IllegalArgumentException("Original price, sale price and quantity must be non-negative");
+        }
+
         Products product = productService.findProductById(flashSaleDetails.getProductId());
+        if (product == null) {
+            throw new NotFoundException("Product not found");
+        }
         Flash_Sale flashSale = flashSaleService.findFlashSaleById(flashSaleDetails.getFlashSaleId());
+        if (flashSale == null) {
+            throw new NotFoundException("Flash sale not found");
+        }
 
         Flash_Sale_Details createFlashSale = new Flash_Sale_Details();
         createFlashSale.setOriginalPrice(flashSaleDetails.getOriginalPrice());
@@ -41,6 +51,9 @@ public class FlashSaleDetailService {
     }
 
     public Flash_Sale_Details findOneById(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid flash sale detail ID");
+        }
         Flash_Sale_Details flashSaleDetails = flashSaleDetailRepository.findByFlashSaleDetailId(id);
         if (flashSaleDetails == null) {
             throw new NotFoundException("Flash sale detail not found");
@@ -49,7 +62,13 @@ public class FlashSaleDetailService {
     }
 
     public List<Flash_Sale_Details> findAllByFlashSaleId(Long flashSaleId) {
+        if (flashSaleId == null || flashSaleId <= 0) {
+            throw new IllegalArgumentException("Invalid flash sale ID");
+        }
         Flash_Sale flashSale = flashSaleService.findFlashSaleById(flashSaleId);
+        if (flashSale == null) {
+            throw new NotFoundException("Flash sale not found");
+        }
         List<Flash_Sale_Details> details = flashSaleDetailRepository.findAllFlashSaleDetailsByFlashSaleId(flashSaleId);
         if (details.isEmpty()) {
             throw new NotFoundException("Flash sale detail not found");
@@ -58,7 +77,13 @@ public class FlashSaleDetailService {
     }
 
     public List<Flash_Sale_Details> findAllByProductId(Long productId) {
+        if (productId == null || productId <= 0) {
+            throw new IllegalArgumentException("Invalid product ID");
+        }
         Products product = productService.findProductById(productId);
+        if (product == null) {
+            throw new NotFoundException("Product not found");
+        }
         List<Flash_Sale_Details> details = flashSaleDetailRepository.findAllFlashSaleDetailsByProductId(productId);
         if  (details.isEmpty()) {
             throw new NotFoundException("Flash sale detail not found");
@@ -67,6 +92,9 @@ public class FlashSaleDetailService {
     }
 
     public List<Flash_Sale_Details> findAllByFlashSaleDetail(int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<Flash_Sale_Details> flashSaleDetails = flashSaleDetailRepository.findAllFlashSaleDetails(pageable);
         if (flashSaleDetails.getContent().isEmpty()) {
@@ -77,7 +105,26 @@ public class FlashSaleDetailService {
 
     // Không cho phép cập nhật productId và flashSaleId
     public Flash_Sale_Details updateDetails(Long id, UpdateFlashSaleDetailDto updateFlashSaleDetailDto) {
+        if (updateFlashSaleDetailDto.getOriginalPrice() != null && updateFlashSaleDetailDto.getOriginalPrice() < 0) {
+            throw new IllegalArgumentException("Original price must be non-negative");
+        }
+        if (updateFlashSaleDetailDto.getSalePrice() != null && updateFlashSaleDetailDto.getSalePrice() < 0) {
+            throw new IllegalArgumentException("Sale price must be non-negative");
+        }
+
+        if (updateFlashSaleDetailDto.getQuantity() != null && updateFlashSaleDetailDto.getQuantity() < 0) {
+            throw new IllegalArgumentException("Quantity must be non-negative");
+        }
+
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid flash sale detail ID");
+        }
+
         Flash_Sale_Details details = findOneById(id);
+
+        if (details == null) {
+            throw new NotFoundException("Flash sale detail not found");
+        }
 
         if (updateFlashSaleDetailDto.getOriginalPrice() != null) {
             details.setOriginalPrice(updateFlashSaleDetailDto.getOriginalPrice());
@@ -93,6 +140,9 @@ public class FlashSaleDetailService {
     }
 
     public Flash_Sale_Details deleteFlashSaleDetail(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid flash sale detail ID");
+        }
         Flash_Sale_Details details = findOneById(id);
         flashSaleDetailRepository.softDeleteByIdFlashSaleDetail(details.getId());
         return details;

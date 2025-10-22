@@ -142,6 +142,12 @@ public class NotificationService {
     }
 
     public PagedResponse<Notifications> getNotificationByUserId(Long userId, int page, int limit) {
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("Invalid user ID");
+        }
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<Notifications> notifications = notificationRepository.findNotificationByUserId(pageable, userId);
         if (notifications.getContent().isEmpty()) {

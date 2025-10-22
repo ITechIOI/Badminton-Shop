@@ -3,8 +3,7 @@ package com.example.productservice.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -12,17 +11,20 @@ import java.util.List;
 @Table(name = "products")
 @Getter
 @Setter
+@Builder
 public class Products extends AbstractModel {
     @NotBlank(message = "Category name is required")
     @Column(nullable = false)
     private String name;
 
+    @NotBlank(message = "Brand is required")
     @Column(nullable = false)
     private String brand;
 
     @Column(nullable = true)
     private String description;
 
+    @NotBlank(message = "Price is required")
     @Column(nullable = false)
     private Integer price;
 
@@ -32,10 +34,11 @@ public class Products extends AbstractModel {
     @Column(nullable = true)
     private String videoUrl;
 
+    @NotBlank(message = "Quantity is required")
     @Column(nullable = true)
     private Integer quantity;
 
-    @Column(nullable = true)
+    @Column(nullable = true, columnDefinition = "varchar(255) default 'available'")
     private String available;
 
     @ManyToOne
@@ -68,6 +71,17 @@ public class Products extends AbstractModel {
                 ", available='" + available + '\'' +
                 ", category=" + category +
                 '}';
+    }
+
+    @Builder
+    public Products(String name, String brand, String description,
+                    Integer price, String imageUrl, String videoUrl,
+                    Integer quantity, String available, Categories category,
+                    List<GRN_Details> grnDetails, List<Flash_Sale_Details> flashSaleDetails) {
+        this.name = name; this.brand = brand; this.description = description;
+        this.price = price; this.imageUrl = imageUrl; this.videoUrl = videoUrl;
+        this.quantity = quantity; this.available = available; this.category = category;
+        this.grnDetails = grnDetails; this.flashSaleDetails = flashSaleDetails;
     }
 
 }

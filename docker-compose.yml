@@ -320,8 +320,8 @@ services:
     #      - "start-dev"
     command:
       - "start-dev"
-      - --hostname-strict=false
-      - --hostname-url=http://keycloak:8080
+#      - --hostname-strict=false
+#      - --hostname-url=http://keycloak:8080
 
   redis:
     image: redis:7.2-alpine
