@@ -10,6 +10,7 @@ import com.example.orderservice.modules.Reviews.dto.output.ProductRatingDto;
 import com.example.orderservice.modules.Reviews.dto.output.ProductRatingRecord;
 import com.example.orderservice.modules.Reviews.repository.ReviewRepository;
 import com.example.orderservice.modules.feign.ProductFeign.ProductClient;
+import com.example.orderservice.modules.feign.ProductFeign.ProductResponse;
 import com.example.orderservice.modules.feign.UserFeign.UserClient;
 import com.example.orderservice.modules.feign.UserFeign.UserResponse;
 import com.example.orderservice.utils.NotFoundException;
@@ -43,6 +44,13 @@ public class ReviewService {
         } catch (FeignException.NotFound ex) {
             throw new NotFoundException("User not found!");
         }
+
+        try {
+            ProductResponse product = productClient.getProductById(createReviewDto.getProductId()).getBody();
+        } catch (FeignException.NotFound ex) {
+            throw new NotFoundException("Product not found!");
+        }
+
         Orders order = orderService.findOrderById(createReviewDto.getOrderId());
 
         if (order == null) {
@@ -109,7 +117,7 @@ public class ReviewService {
             throw new IllegalArgumentException("Invalid page or limit");
         }
         try {
-            productClient.getProductById(productId).getBody();
+            ProductResponse product = productClient.getProductById(productId).getBody();
         } catch (FeignException.NotFound ex) {
             throw new NotFoundException("Product not found!");
         }
@@ -166,4 +174,5 @@ public class ReviewService {
         Reviews review = findReviewById(id);
         reviewRepository.softDeleteById(id);
     }
+
 }
