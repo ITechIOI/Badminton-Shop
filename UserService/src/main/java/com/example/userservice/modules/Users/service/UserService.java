@@ -116,10 +116,13 @@ public class UserService {
     public UserResponse getUserByKeycloakId(String keycloakId) {
         // 1. Lấy user trong MySQL
         Users user = userRepository.findOneByKeycloakId(keycloakId);
+        System.out.println("Keycloak ID: " + user.toString());
         if (user == null) {
             logger.error("Error fetching user from Keycloak: {}");
             throw new NotFoundException("User not found in MySQL");
         }
+
+
 
         // 2. Lấy thông tin user từ Keycloak
         UserRepresentation keycloakUser;
@@ -168,6 +171,8 @@ public class UserService {
         } else if (realmRoles.contains("client")) {
             mainRole = "client";
         }
+
+        System.out.println("Main Role: " + mainRole);
 
         // 6. Trả về DTO
         return new UserResponse(
