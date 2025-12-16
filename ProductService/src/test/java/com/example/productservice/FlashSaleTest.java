@@ -30,7 +30,7 @@ public class FlashSaleTest {
     @InjectMocks private FlashSaleService flashSaleService;
 
     // ===== Thời gian dùng cho create & findByTime =====
-    private static final LocalDateTime FUTURE_START = LocalDateTime.of(2025, 11, 30, 9, 0, 0);
+    private static final LocalDateTime FUTURE_START = LocalDateTime.of(2025, 12, 20, 9, 0, 0);
     private static final LocalDateTime PAST_START   = LocalDateTime.of(2025,  9, 30, 9, 0, 0);
     private static final LocalDateTime FUTURE_END   = LocalDateTime.of(2025, 12, 31, 23, 59, 59);
     private static final LocalDateTime EARLIER_END  = LocalDateTime.of(2025, 11, 29, 9, 0, 0);
