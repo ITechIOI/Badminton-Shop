@@ -52,10 +52,22 @@ public class CartService {
     }
 
     public Carts findCartById(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid cart ID");
+        }
         return cartRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Cart not found"));
     }
 
     public PagedResponse<Carts> findCartByUserId(Long userId, int page, int limit) {
+         UserResponse user = userClient.getUserById(userId).getBody();
+        if (user == null) {
+            throw new NotFoundException("User not found!");
+        }
+        // Kiểm tra giá trị của page và limit
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
+
         Pageable pageable = PageRequest.of(page, limit);
         Page<Carts> carts = cartRepository.findByUserId(userId, pageable);
         if (carts.getContent().isEmpty()) {
@@ -106,6 +118,9 @@ public class CartService {
     }
 
     public void deleteCart(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid cart ID");
+        }
         Carts cart = cartRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Cart not found"));
         cartRepository.softDeleteById(cart.getId());
     }

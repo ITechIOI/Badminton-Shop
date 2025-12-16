@@ -4,6 +4,7 @@ import com.example.productservice.models.Categories;
 import com.example.productservice.modules.Catgories.dto.CreateCategoryDto;
 import com.example.productservice.modules.Catgories.dto.UpdateCategoryDto;
 import com.example.productservice.modules.Catgories.service.CategoryService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,7 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping("/new")
-    public ResponseEntity<Categories> createCategory(@RequestBody CreateCategoryDto categoryDto) {
+    public ResponseEntity<Categories> createCategory(@RequestBody @Valid CreateCategoryDto categoryDto) {
         return ResponseEntity.ok(categoryService.createCategory(categoryDto));
     }
 
@@ -41,7 +42,7 @@ public class CategoryController {
     @PutMapping("{categoryId}")
     public ResponseEntity<Categories> updateCategory(
             @PathVariable("categoryId") Long categoryId,
-            @RequestBody UpdateCategoryDto updateCategoryDto
+            @RequestBody @Valid UpdateCategoryDto updateCategoryDto
     ) {
         return ResponseEntity.ok(categoryService.updateCategory(categoryId, updateCategoryDto));
     }

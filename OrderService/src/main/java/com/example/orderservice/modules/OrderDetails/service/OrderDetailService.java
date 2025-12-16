@@ -35,6 +35,14 @@ public class OrderDetailService implements OrderDetailServiceInterface {
     private final OrderDetailRepository orderDetailRepository;
 
     public OrderDetails createDetails(CreateOrderDetailDto createOrderDetailDto) {
+        if (createOrderDetailDto.getQuantity() == null || createOrderDetailDto.getQuantity() <= 0 ) {
+            throw new IllegalArgumentException("Quantity must be greater than 0");
+        }
+
+        if (createOrderDetailDto.getPrice() != null && createOrderDetailDto.getPrice() < 0) {
+            throw new IllegalArgumentException("Price must be non-negative");
+        }
+
         Orders orderResponse = orderService.findOrderById(createOrderDetailDto.getOrderId());
         OrderDetails orderDetails = new OrderDetails();
 
@@ -62,6 +70,12 @@ public class OrderDetailService implements OrderDetailServiceInterface {
 
     @Override
     public PagedResponse<OrderDetails> findDetailsByOrderId(Long orderId, int page, int limit) {
+        if (orderId == null || orderId <= 0) {
+            throw new IllegalArgumentException("Invalid order ID");
+        }
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Orders order = orderService.findOrderById(orderId);
         Pageable pageable = PageRequest.of(page, limit);
         Page<OrderDetails> orderDetails = orderRepository.findDetailsByOrderId(orderId, pageable);
@@ -95,6 +109,9 @@ public class OrderDetailService implements OrderDetailServiceInterface {
     }
 
     public PagedResponse<OrderDetails> findAllOrderDetails(int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<OrderDetails> orderDetails = orderRepository.findAllOrderDetails(pageable);
         if (orderDetails.getContent().isEmpty()) {
@@ -108,6 +125,9 @@ public class OrderDetailService implements OrderDetailServiceInterface {
     }
 
     public OrderDetails findOrderDetailsById(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid order details ID");
+        }
         return orderRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Order Details not found"));
     }
 
@@ -132,8 +152,22 @@ public class OrderDetailService implements OrderDetailServiceInterface {
 
     // Tìm kiếm top n sản phẩm bán chạy nhất (có số lượt bán cao nhất)
     public PagedResponse<TopProductDto> findTopSellingProducts(int page, int limit, Integer year, Integer month, Integer day) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<RawTopProductDto> orderDetailsPage;
+
+        // Kiểm tra tính valid của ngày, tháng, năm
+        if (year != null && (year < 1970 || year > 2100)) {
+            throw new IllegalArgumentException("Invalid year");
+        }
+        if (month != null && (month < 1 || month > 12)) {
+            throw new IllegalArgumentException("Invalid month");
+        }
+        if (day != null && (day < 1 || day > 31)) {
+            throw new IllegalArgumentException("Invalid day");
+        }
 
         if (year != null && month != null && day != null) {
             orderDetailsPage = orderRepository.findTopSellingProductsByDay(year, month, day, pageable);
@@ -164,20 +198,32 @@ public class OrderDetailService implements OrderDetailServiceInterface {
     }
 
     public Long getRevenue(Integer year, Integer month, Integer day) {
-        Long revenue;
+        validateDate(year, month, day);
 
-        if (year != null && month != null && day != null) {
-            revenue = orderRepository.getRevenueByDay(year, month, day);
-        } else if (year != null && month != null) {
-            revenue = orderRepository.getRevenueByMonth(year, month);
-        } else if (year != null) {
-            revenue = orderRepository.getRevenueByYear(year);
-        } else {
-            revenue = orderRepository.getRevenueAllTime();
+        if (year != null) {
+            if (month != null) {
+                if (day != null) {
+                    return orderRepository.getRevenueByDay(year, month, day);
+                }
+                return orderRepository.getRevenueByMonth(year, month);
+            }
+            return orderRepository.getRevenueByYear(year);
         }
-
-        return revenue;
+        return orderRepository.getRevenueAllTime();
     }
+
+    private void validateDate(Integer year, Integer month, Integer day) {
+        if (year != null && (year < 1970 || year > 2100)) {
+            throw new IllegalArgumentException("Invalid year");
+        }
+        if (month != null && (month < 1 || month > 12)) {
+            throw new IllegalArgumentException("Invalid month");
+        }
+        if (day != null && (day < 1 || day > 31)) {
+            throw new IllegalArgumentException("Invalid day");
+        }
+    }
+
 
     public List<MonthlyRevenueDto> visualizeRevenueByYear(int year) {
         return orderRepository.getMonthlyRevenueByYear(year);
@@ -209,6 +255,9 @@ public class OrderDetailService implements OrderDetailServiceInterface {
     }
 
     public void deleteOrderDetails(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid order details ID");
+        }
         OrderDetails orderDetails = findOrderDetailsById(id);
         orderRepository.softDeleteById(orderDetails.getId());
     }

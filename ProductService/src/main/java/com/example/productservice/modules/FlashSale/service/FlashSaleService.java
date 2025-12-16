@@ -22,6 +22,13 @@ public class FlashSaleService {
     private final FlashSaleRepository flashSaleRepository;
 
     public Flash_Sale createFlashSale(CreateFlashSaleDto createFlashSaleDto) {
+        if (createFlashSaleDto.getEndTime().isBefore(createFlashSaleDto.getStartTime())) {
+            throw new IllegalArgumentException("End time must be after start time");
+        }
+        if (createFlashSaleDto.getStartTime().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Start time must be in the future");
+        }
+
         Flash_Sale flashSale = new Flash_Sale();
         flashSale.setName(createFlashSaleDto.getName());
         flashSale.setDescription(createFlashSaleDto.getDescription());
@@ -32,6 +39,9 @@ public class FlashSaleService {
     }
 
     public Flash_Sale findFlashSaleById(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid flash sale ID");
+        }
         Flash_Sale flashSale = flashSaleRepository.findOneById(id);
         if (flashSale == null) {
             throw new NotFoundException("Flash sale not found");
@@ -40,6 +50,12 @@ public class FlashSaleService {
     }
 
     public Flash_Sale findFlashSaleByTime(LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime == null || endTime == null) {
+            throw new IllegalArgumentException("Start time and end time cannot be null");
+        }
+        if (endTime.isBefore(startTime)) {
+            throw new IllegalArgumentException("End time must be after start time");
+        }
         Flash_Sale flashSale = flashSaleRepository.findFlashSaleByTime(startTime, endTime);
         if (flashSale == null) {
             throw new NotFoundException("Flash sale not found");
@@ -48,6 +64,9 @@ public class FlashSaleService {
     }
 
     public PagedResponse<Flash_Sale> getAllFlashSales(int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<Flash_Sale> flashSales = flashSaleRepository.findAllFlashSales(pageable);
         if (flashSales.getContent().isEmpty()) {
@@ -79,6 +98,9 @@ public class FlashSaleService {
     }
 
     public void deleteFlashSale(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid flash sale ID");
+        }
         Flash_Sale flashSale = findFlashSaleById(id);
         flashSaleRepository.softDeleteByIdFlashSale(flashSale.getId());
     }

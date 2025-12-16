@@ -6,7 +6,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 public class UpdateUserDto {
     private String firstName;
     private String lastName;

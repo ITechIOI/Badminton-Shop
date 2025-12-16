@@ -43,6 +43,9 @@ public class PaymentService {
     }
 
     public Payments findPaymentByTransactionId(String transactionId) {
+        if (transactionId == null || transactionId.isEmpty()) {
+            throw new IllegalArgumentException("Invalid transaction ID");
+        }
         Payments payments = paymentRepository.findByTransactionId(transactionId);
         if (payments == null) {
             throw new RuntimeException("Payment not found");
@@ -73,6 +76,9 @@ public class PaymentService {
     }
 
     public void deletePayment(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid payment ID");
+        }
         Payments payment = paymentRepository.findOneById(id).orElseThrow(() -> new RuntimeException("Payment not found"));
         paymentRepository.softDeleteById(id);
     }
@@ -86,10 +92,16 @@ public class PaymentService {
     }
 
     public Payments findPaymentById(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid payment ID");
+        }
         return paymentRepository.findOneById(id).orElseThrow(() -> new RuntimeException("Payment not found"));
     }
 
     public PagedResponse<Payments> getAllPayments(int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<Payments> payments = paymentRepository.findAllPayment(pageable);
         if (payments.getContent().isEmpty()) {

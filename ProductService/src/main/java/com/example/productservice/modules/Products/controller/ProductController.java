@@ -7,6 +7,7 @@ import com.example.productservice.modules.Products.dto.UpdateProductDto;
 import com.example.productservice.modules.Products.service.CloudinaryService;
 import com.example.productservice.modules.Products.service.ProductService;
 import com.example.productservice.utils.PagedResponse;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -25,7 +26,7 @@ public class ProductController {
 
     @PostMapping("/new")
     public ResponseEntity<Products> createProduct(
-            @ModelAttribute CreateProductDto createProductDto
+            @Valid @ModelAttribute CreateProductDto createProductDto
     ) {
         return ResponseEntity.ok(productService.createProduct(createProductDto));
     }
@@ -33,7 +34,7 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<Products> updateProduct(
             @PathVariable("id") Long id,
-            @ModelAttribute UpdateProductDto createProductDto
+            @Valid  @ModelAttribute UpdateProductDto createProductDto
     ) {
         Products product = productService.findProductById(id);
         return ResponseEntity.ok(productService.updateProduct(id, createProductDto));

@@ -5,10 +5,12 @@ import com.example.orderservice.models.Orders;
 import com.example.orderservice.models.Reviews;
 import com.example.orderservice.modules.Orders.service.OrderService;
 import com.example.orderservice.modules.Reviews.dto.CreateReviewDto;
+import com.example.orderservice.modules.Reviews.dto.UpdateReviewDto;
 import com.example.orderservice.modules.Reviews.dto.output.ProductRatingDto;
 import com.example.orderservice.modules.Reviews.dto.output.ProductRatingRecord;
 import com.example.orderservice.modules.Reviews.repository.ReviewRepository;
 import com.example.orderservice.modules.feign.ProductFeign.ProductClient;
+import com.example.orderservice.modules.feign.ProductFeign.ProductResponse;
 import com.example.orderservice.modules.feign.UserFeign.UserClient;
 import com.example.orderservice.modules.feign.UserFeign.UserResponse;
 import com.example.orderservice.utils.NotFoundException;
@@ -32,6 +34,9 @@ public class ReviewService {
     private final ProductClient productClient;
 
     public Reviews createReview(CreateReviewDto createReviewDto) {
+        if (createReviewDto.getRating() < 1 || createReviewDto.getRating() > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
         Reviews review = new Reviews();
         UserResponse user;
         try {
@@ -39,7 +44,18 @@ public class ReviewService {
         } catch (FeignException.NotFound ex) {
             throw new NotFoundException("User not found!");
         }
+
+        try {
+            ProductResponse product = productClient.getProductById(createReviewDto.getProductId()).getBody();
+        } catch (FeignException.NotFound ex) {
+            throw new NotFoundException("Product not found!");
+        }
+
         Orders order = orderService.findOrderById(createReviewDto.getOrderId());
+
+        if (order == null) {
+            throw new NotFoundException("Order not found!");
+        }
 
         review.setContent(createReviewDto.getContent());
         review.setRating(createReviewDto.getRating());
@@ -51,6 +67,9 @@ public class ReviewService {
     }
 
     public Reviews findReviewById(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid review ID");
+        }
         return reviewRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Review not found"));
     }
 
@@ -65,6 +84,9 @@ public class ReviewService {
     }
 
     public PagedResponse<Reviews> getAllReviews(int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         Pageable pageable = PageRequest.of(page, limit);
         Page<Reviews> reviewPage = reviewRepository.findAll(pageable);
         if (reviewPage.isEmpty()) {
@@ -91,8 +113,11 @@ public class ReviewService {
 
     // Tìm kiếm đánh giá theo productId
     public PagedResponse<Reviews> findReviewsByProductId(Long productId, int page, int limit) {
+        if (page < 0 || limit <= 0) {
+            throw new IllegalArgumentException("Invalid page or limit");
+        }
         try {
-            productClient.getProductById(productId).getBody();
+            ProductResponse product = productClient.getProductById(productId).getBody();
         } catch (FeignException.NotFound ex) {
             throw new NotFoundException("Product not found!");
         }
@@ -112,44 +137,44 @@ public class ReviewService {
 
     // Tìm kiếm sản phẩm dựa trên rating đánh giá
     public List<ProductRatingRecord> findProductsByRatingThreshold(Integer rating) {
-        if (rating < 1 || rating > 5) {
+        if ( rating == null || rating < 1 || rating > 5 ) {
             throw new NotFoundException("Rating must be between 1 and 5");
         }
         List<ProductRatingRecord> reviewPage = reviewRepository.findProductByRating(rating);
         System.out.println("Product rating: " + reviewPage);
 
         if (reviewPage.isEmpty()) {
-            throw new NotFoundException("Product not found");
+            throw new NotFoundException("Review not found");
         }
 
         return reviewPage;
     }
 
-    public Reviews updateReview(Long id, CreateReviewDto createReviewDto) {
+    public Reviews updateReview(Long id, UpdateReviewDto createReviewDto) {
+        if (createReviewDto.getRating() < 1 || createReviewDto.getRating() > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid review ID");
+        }
         Reviews review = reviewRepository.findOneById(id).orElseThrow(() -> new NotFoundException("Review not found"));
-        if (createReviewDto.getUserId() != null) {
-            try {
-                UserResponse user = userClient.getUserById(createReviewDto.getUserId()).getBody();
-            } catch (FeignException.NotFound ex) {
-                throw new NotFoundException("User not found!");
-            }
-//            if (user == null) {
-//                throw new NotFoundException("User not found!");
-//            }
-            review.setUserId(createReviewDto.getUserId());
+        if (createReviewDto.getContent() != null) {
+            review.setContent(createReviewDto.getContent());
         }
-        if (createReviewDto.getOrderId() != null) {
-            Orders order = orderService.findOrderById(createReviewDto.getOrderId());
-            review.setOrders(order);
+        if (createReviewDto.getRating() != null) {
+            review.setRating(createReviewDto.getRating());
         }
-        review.setContent(createReviewDto.getContent());
-        review.setRating(createReviewDto.getRating());
-        review.setProductId(createReviewDto.getProductId());
         return reviewRepository.save(review);
     }
 
     public void deleteReview(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid review ID");
+        }
+
+
         Reviews review = findReviewById(id);
         reviewRepository.softDeleteById(id);
     }
+
 }
