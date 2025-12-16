@@ -142,6 +142,51 @@ class UserTest {
         when(realmLevelRoles.listEffective()).thenReturn(roles);
     }
 
+    private void stubKeycloakByKcId(String kcId, UserRepresentation rep, List<RoleRepresentation> roles) {
+        when(usersResource.get(kcId)).thenReturn(userResource);
+        when(userResource.toRepresentation()).thenReturn(rep);
+        when(userResource.roles()).thenReturn(roleMappingResource);
+        when(roleMappingResource.realmLevel()).thenReturn(realmLevelRoles);
+        when(realmLevelRoles.listAll()).thenReturn(roles);
+    }
+
+    private Users dbUser(long id, String kcId) {
+        return mysqlUser(id, kcId);
+    }
+
+    private void stubKeycloakUserExists(String kcId) {
+        when(usersResource.get(kcId)).thenReturn(userResource);
+        when(userResource.toRepresentation()).thenReturn(new UserRepresentation());
+    }
+
+    private void stubKeycloakUserMissing(String kcId) {
+        when(usersResource.get(kcId)).thenReturn(userResource);
+        when(userResource.toRepresentation()).thenReturn(null);
+    }
+
+    private UserRepresentation kcRep(String first, String last, String email, String username,
+                                     String gender, String avatar, String phone) {
+        UserRepresentation rep = new UserRepresentation();
+        rep.setFirstName(first);
+        rep.setLastName(last);
+        rep.setEmail(email);
+        rep.setUsername(username);
+        if (gender != null || avatar != null || phone != null) {
+            rep.setAttributes(Map.of(
+                    "gender", gender == null ? null : List.of(gender),
+                    "avatar", avatar == null ? null : List.of(avatar),
+                    "phone", phone == null ? null : List.of(phone)
+            ));
+        }
+        return rep;
+    }
+
+    private void stubUpdateChain(String kcId, UserRepresentation current) {
+        when(realmResource.users()).thenReturn(usersResource);
+        when(usersResource.get(kcId)).thenReturn(userResource);
+        when(userResource.toRepresentation()).thenReturn(current);
+    }
+
     @Nested
     @DisplayName("createUser")
     class CreateUserTests {
@@ -321,14 +366,6 @@ class UserTest {
     @DisplayName("getUserById")
     class GetUserByIdTests {
 
-        private void stubKeycloakByKcId(String kcId, UserRepresentation rep, List<RoleRepresentation> roles) {
-            when(usersResource.get(kcId)).thenReturn(userResource);
-            when(userResource.toRepresentation()).thenReturn(rep);
-            when(userResource.roles()).thenReturn(roleMappingResource);
-            when(roleMappingResource.realmLevel()).thenReturn(realmLevelRoles);
-            when(realmLevelRoles.listAll()).thenReturn(roles);
-        }
-
         @Test
         @DisplayName("UTID001: success admin role")
         void getUserById_success() {
@@ -456,29 +493,6 @@ class UserTest {
     @DisplayName("updateUser")
     class UpdateUserTests {
 
-        private UserRepresentation kcRep(String first, String last, String email, String username,
-                                         String gender, String avatar, String phone) {
-            UserRepresentation rep = new UserRepresentation();
-            rep.setFirstName(first);
-            rep.setLastName(last);
-            rep.setEmail(email);
-            rep.setUsername(username);
-            if (gender != null || avatar != null || phone != null) {
-                rep.setAttributes(Map.of(
-                        "gender", gender == null ? null : List.of(gender),
-                        "avatar", avatar == null ? null : List.of(avatar),
-                        "phone", phone == null ? null : List.of(phone)
-                ));
-            }
-            return rep;
-        }
-
-        private void stubUpdateChain(String kcId, UserRepresentation current) {
-            when(realmResource.users()).thenReturn(usersResource);
-            when(usersResource.get(kcId)).thenReturn(userResource);
-            when(userResource.toRepresentation()).thenReturn(current);
-        }
-
         @Test
         @DisplayName("UTU001: success update")
         void updateUser_success() {
@@ -529,20 +543,6 @@ class UserTest {
     @Nested
     @DisplayName("deleteUser")
     class DeleteUserTests {
-
-        private Users dbUser(long id, String kcId) {
-            return mysqlUser(id, kcId);
-        }
-
-        private void stubKeycloakUserExists(String kcId) {
-            when(usersResource.get(kcId)).thenReturn(userResource);
-            when(userResource.toRepresentation()).thenReturn(new UserRepresentation());
-        }
-
-        private void stubKeycloakUserMissing(String kcId) {
-            when(usersResource.get(kcId)).thenReturn(userResource);
-            when(userResource.toRepresentation()).thenReturn(null);
-        }
 
         @Test
         @DisplayName("DEL001: success delete")
