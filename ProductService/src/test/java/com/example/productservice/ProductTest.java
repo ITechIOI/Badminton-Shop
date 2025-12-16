@@ -1,4 +1,5 @@
 package com.example.productservice;
+
 import com.example.productservice.modules.Products.dto.UpdateProductDto;
 import org.junit.jupiter.api.DisplayName;
 import com.example.productservice.models.Categories;
@@ -29,9 +30,12 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductTest {
-    @Mock private ProductRepository productRepository;
-    @Mock private CategoryService categoryService;
-    @InjectMocks private ProductService productService;
+    @Mock
+    private ProductRepository productRepository;
+    @Mock
+    private CategoryService categoryService;
+    @InjectMocks
+    private ProductService productService;
 
     private static Products existingProduct() {
         Products p = new Products();
@@ -65,8 +69,11 @@ public class ProductTest {
     }
 
     @Nested
-    @DisplayName("createFlashSale")
+    @DisplayName("createProduct")
     class createProduct {
+        // ==========================================================
+        // UTCP001 — Happy path: valid data, categoryId exists (=1)
+        // ==========================================================
         @Test
         @DisplayName("UTCP001: Valid input (Laptop/Dell/price=100000/qty=10/categoryId=1) ⇒ saved with category")
         void createProduct_success_allValid() {
@@ -83,8 +90,7 @@ public class ProductTest {
             CreateProductDto input = new CreateProductDto(
                     "Laptop", "Dell", "This product is necessary",
                     100_000, "http://avatar.png", "http://video.mp4",
-                    "available", 10, 1L
-            );
+                    "available", 10, 1L);
 
             // When
             Products saved = productService.createProduct(input);
@@ -114,8 +120,7 @@ public class ProductTest {
             CreateProductDto input = new CreateProductDto(
                     "Laptop", "Dell", "This product is necessary",
                     -100_000, "http://avatar.png", "http://video.mp4",
-                    "available", 10, 1L
-            );
+                    "available", 10, 1L);
 
             assertThatThrownBy(() -> productService.createProduct(input))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -130,8 +135,7 @@ public class ProductTest {
             CreateProductDto input = new CreateProductDto(
                     "Laptop", "Dell", "This product is necessary",
                     100_000, "http://avatar.png", "http://video.mp4",
-                    "available", -1, 1L
-            );
+                    "available", -1, 1L);
 
             assertThatThrownBy(() -> productService.createProduct(input))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -149,8 +153,7 @@ public class ProductTest {
             CreateProductDto input = new CreateProductDto(
                     "Laptop", "Dell", "This product is necessary",
                     100_000, "http://avatar.png", "http://video.mp4",
-                    "available", 10, 100L
-            );
+                    "available", 10, 100L);
 
             assertThatThrownBy(() -> productService.createProduct(input))
                     .isInstanceOf(NotFoundException.class)
@@ -169,8 +172,7 @@ public class ProductTest {
             CreateProductDto input = new CreateProductDto(
                     "Laptop", "Dell", "This product is necessary",
                     0, "http://avatar.png", "http://video.mp4",
-                    "available", 0, 1L
-            );
+                    "available", 0, 1L);
 
             Products saved = productService.createProduct(input);
 
@@ -188,8 +190,7 @@ public class ProductTest {
             CreateProductDto input = new CreateProductDto(
                     "Laptop", "Dell", "This product is necessary",
                     100_000, "http://avatar.png", "http://video.mp4",
-                    "available", 10, 1L
-            );
+                    "available", 10, 1L);
 
             Products saved = productService.createProduct(input);
 
@@ -278,7 +279,8 @@ public class ProductTest {
     @Nested
     @DisplayName("getProductByBrand")
     class getProductByBrand {
-        // UTGB001 — brand="Nike", page=1, limit=2  -> returns 2 items, totalPages=2, totalElements=4
+        // UTGB001 — brand="Nike", page=1, limit=2 -> returns 2 items, totalPages=2,
+        // totalElements=4
         @Test
         @DisplayName("UTGB001: brand='Nike', page=1, limit=2 ⇒ returns page [p1,p2], totalPages=2, totalElements=4")
         void getByBrand_success_secondPage() {
@@ -299,7 +301,8 @@ public class ProductTest {
         }
 
         // UTGB002 — brand is empty -> BadRequest ("Brand cannot be empty")
-        // If you refactored to IllegalArgumentException (recommended), change the assertion accordingly.
+        // If you refactored to IllegalArgumentException (recommended), change the
+        // assertion accordingly.
         @Test
         @DisplayName("UTGB002: brand='' ⇒ BadRequestException('Brand cannot be empty')")
         void getByBrand_fail_brandEmpty() {
@@ -311,7 +314,8 @@ public class ProductTest {
             verifyNoInteractions(productRepository);
         }
 
-        // UTGB003 — page invalid (-1) -> IllegalArgumentException("Invalid page or limit")
+        // UTGB003 — page invalid (-1) -> IllegalArgumentException("Invalid page or
+        // limit")
         @Test
         @DisplayName("UTGB003: page=-1 ⇒ IllegalArgumentException('Invalid page or limit')")
         void getByBrand_fail_pageNegative() {
@@ -419,7 +423,8 @@ public class ProductTest {
             verifyNoMoreInteractions(productRepository);
         }
 
-        // UTGAP002 — page=1, limit=2 -> empty page => NotFoundException("No product found")
+        // UTGAP002 — page=1, limit=2 -> empty page => NotFoundException("No product
+        // found")
         @Test
         @DisplayName("UTGAP002: page=1, limit=2 ⇒ NotFoundException('No product found')")
         void getAll_page1_limit2_notFound() {
@@ -435,7 +440,8 @@ public class ProductTest {
             verifyNoMoreInteractions(productRepository);
         }
 
-        // UTGAP003 — page=-1, limit=2 -> IllegalArgumentException("Invalid page or limit")
+        // UTGAP003 — page=-1, limit=2 -> IllegalArgumentException("Invalid page or
+        // limit")
         @Test
         @DisplayName("UTGAP003: page=-1, limit=2 ⇒ IllegalArgumentException('Invalid page or limit')")
         void getAll_pageNegative_invalid() {
@@ -462,8 +468,7 @@ public class ProductTest {
             UpdateProductDto input = new UpdateProductDto(
                     "Macbook pro", "Apple", null,
                     5000, "img.png", null,
-                    "available", 7, 1L
-            );
+                    "available", 7, 1L);
 
             Products updated = productService.updateProduct(1L, input);
 
@@ -484,7 +489,8 @@ public class ProductTest {
         @Test
         @DisplayName("UTUP002: id=-1 ⇒ IllegalArgumentException('Invalid product ID')")
         void update_fail_invalidId() {
-            UpdateProductDto dto = new UpdateProductDto("Macbook pro", "Apple", null, 5000, "img.png", null, "available", 7, 1L);
+            UpdateProductDto dto = new UpdateProductDto("Macbook pro", "Apple", null, 5000, "img.png", null,
+                    "available", 7, 1L);
 
             assertThatThrownBy(() -> productService.updateProduct(-1L, dto))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -498,7 +504,8 @@ public class ProductTest {
         @DisplayName("UTUP003: id=2 not exists ⇒ NotFoundException('Product not found')")
         void update_fail_notFound() {
             when(productRepository.findOneById(2L)).thenReturn(Optional.empty());
-            UpdateProductDto dto = new UpdateProductDto("Macbook pro", "Apple", null, 5000, "img.png", null, "available", 7, 1L);
+            UpdateProductDto dto = new UpdateProductDto("Macbook pro", "Apple", null, 5000, "img.png", null,
+                    "available", 7, 1L);
 
             assertThatThrownBy(() -> productService.updateProduct(2L, dto))
                     .isInstanceOf(NotFoundException.class)
@@ -562,8 +569,7 @@ public class ProductTest {
             UpdateProductDto dto = new UpdateProductDto(
                     null, "Apple", null,
                     5000, null, null,
-                    "available", null, null
-            );
+                    "available", null, null);
 
             Products updated = productService.updateProduct(1L, dto);
 
