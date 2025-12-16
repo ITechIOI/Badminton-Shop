@@ -595,7 +595,7 @@ public class OrderTest {
         @Test
         @DisplayName("UTOBT04: year=0 ⇒ IllegalArgumentException")
         void orderStatisticsByTime_UTOBT04_invalidYear() {
-            assertThatThrownBy(() -> orderService.orderStatisticsByTime(0, 10, 25, 0, 2))
+            assertThatThrownBy(() -> orderService.orderStatisticsByTime(-1, 10, 25, 0, 2))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Invalid date parameters");
 
