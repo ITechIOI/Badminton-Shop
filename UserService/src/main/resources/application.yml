@@ -4,15 +4,15 @@ spring:
   config:
     import: optional:configserver:http://config-server:8888
 
-#    # Vô hiệu hóa config server
-#  cloud:
-#    config:
-#      enabled: false
+  #    # Vô hiệu hóa config server
+  #  cloud:
+  #    config:
+  #      enabled: false
 
   datasource:
-    url: jdbc:mysql://userservice-nguyenloan2000hbt-d1f9.h.aivencloud.com:14850/userservice?sslMode=REQUIRED
-    username: avnadmin
-    password: AVNS_mnCRriUO6Ub4Xcbz81e
+    url: ${DB_URL:jdbc:mysql://localhost:3306/userservice?sslMode=REQUIRED}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:password}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
@@ -25,7 +25,6 @@ spring:
         jwt:
           issuer-uri: http://keycloak:8080/realms/micro-service
           jwk-set-uri: http://keycloak:8080/realms/micro-service/protocol/openid-connect/certs
-
 
 management:
   tracing:
@@ -60,8 +59,8 @@ logging:
 
 keycloak:
   admin:
-    server-url: http://keycloak:8080           # trùng với port host
-    realm: master                          # realm chứa admin-cli
+    server-url: http://keycloak:8080 # trùng với port host
+    realm: master # realm chứa admin-cli
     client-id: admin-cli
     username: admin
     password: admin

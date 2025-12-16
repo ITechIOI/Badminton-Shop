@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://userservice-nguyenloan2000hbt-d1f9.h.aivencloud.com:14850/userservice?sslMode=REQUIRED
-    username: avnadmin
-    password: AVNS_mnCRriUO6Ub4Xcbz81e
+    url: ${DB_URL:jdbc:mysql://localhost:3306/paymentservice?sslMode=REQUIRED}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:password}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect

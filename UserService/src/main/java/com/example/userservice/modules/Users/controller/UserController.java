@@ -87,4 +87,10 @@ public class UserController {
         userService.deleteUser(keycloakId);
         return ResponseEntity.ok(null);
     }
+
+    @DeleteMapping("/id/{id}")
+    public ResponseEntity<Users> deleteUserById(@PathVariable Long id) {
+        userService.deleteUserById(id);
+        return ResponseEntity.ok(null);
+    }
 }

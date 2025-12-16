@@ -32,15 +32,9 @@ import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class CategoryTest {
 
-    // ---------------------------------------------------------------------
-    // Mocks & SUT
-    // ---------------------------------------------------------------------
     @Mock private CategoryRepository categoryRepository;
     @InjectMocks private CategoryService categoryService;
 
-    // ---------------------------------------------------------------------
-    // Helper factory methods
-    // ---------------------------------------------------------------------
     private static CreateCategoryDto createDto(String name, Integer count) {
         return CreateCategoryDto.builder().name(name).count(count).build();
     }
@@ -61,9 +55,6 @@ class CategoryTest {
         return category(1L, "Electronics", 10);
     }
 
-    // =====================================================================
-    // createCategory
-    // =====================================================================
     @Nested
     @DisplayName("createCategory")
     class CreateCategory {
