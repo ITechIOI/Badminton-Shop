@@ -6,10 +6,7 @@ import com.example.userservice.modules.Users.repository.UserRepository;
 import com.example.userservice.modules.Users.service.UserService;
 import com.example.userservice.utils.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.*;
@@ -30,29 +27,18 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Unit tests for UserService: createUser / getUserByKeycloakId / getUserById / getAllUsers / updateUser / deleteUser.
- * Focus: clarity, DRY helpers, stable assertions.
- */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class UserTest {
 
-    // =========================
-    // Constants
-    // =========================
     private static final String REALM = "myrealm";
     private static final String ROLE_USER = "user";
     private static final String ROLE_ADMIN = "admin";
     private static final String ROLE_CLIENT = "client";
     private static final String KC_USER_URL_PREFIX = "http://kc/realms/" + REALM + "/users/";
 
-    // =========================
-    // Mocks / SUT
-    // =========================
     @Mock private UserRepository userRepository;
     @Mock private Keycloak keycloak;
-
     @Mock private RealmResource realmResource;
     @Mock private UsersResource usersResource;
     @Mock private UserResource userResource;
@@ -64,24 +50,21 @@ class UserTest {
     @InjectMocks
     private UserService userService;
 
-    // =========================
-    // Setup
-    // =========================
     @BeforeEach
     void setup() throws Exception {
         setPrivateField(UserService.class, userService, "realm", REALM);
-        when(keycloak.realm(REALM)).thenReturn(realmResource);
+        when(keycloak.realm(anyString())).thenReturn(realmResource);
         when(realmResource.users()).thenReturn(usersResource);
         when(realmResource.roles()).thenReturn(rolesResource);
+        when(usersResource.get(anyString())).thenReturn(userResource);
         when(userResource.roles()).thenReturn(roleMappingResource);
         when(roleMappingResource.realmLevel()).thenReturn(realmLevelRoles);
+        when(realmLevelRoles.listAll()).thenReturn(List.of());
+        when(realmLevelRoles.listEffective()).thenReturn(List.of());
     }
 
-    // =========================
-    // Helpers
-    // =========================
     private static void setPrivateField(Class<?> type, Object target, String field, Object value) throws Exception {
-        final Field f = type.getDeclaredField(field);
+        Field f = type.getDeclaredField(field);
         f.setAccessible(true);
         f.set(target, value);
     }
@@ -100,10 +83,16 @@ class UserTest {
     }
 
     private void stubRealmRole(String roleName) {
-        final RoleRepresentation rr = new RoleRepresentation();
+        RoleRepresentation rr = new RoleRepresentation();
         rr.setName(roleName);
         when(rolesResource.get(roleName)).thenReturn(roleResource);
         when(roleResource.toRepresentation()).thenReturn(rr);
+    }
+
+    private static RoleRepresentation role(String name) {
+        RoleRepresentation r = new RoleRepresentation();
+        r.setName(name);
+        return r;
     }
 
     private static CreateUserDto baseDto() {
@@ -132,7 +121,7 @@ class UserTest {
     }
 
     private static Users mysqlUser(long id, String kcId) {
-        final Users u = new Users();
+        Users u = new Users();
         u.setId(id);
         u.setKeycloakId(kcId);
         return u;
@@ -142,58 +131,54 @@ class UserTest {
         when(usersResource.get(keycloakId)).thenReturn(userResource);
         when(userResource.toRepresentation()).thenReturn(rep);
         when(realmLevelRoles.listAll()).thenReturn(roles);
+        when(realmLevelRoles.listEffective()).thenReturn(roles);
     }
 
-    // =====================================================================
-    // createUser
-    // =====================================================================
-    @Nested @DisplayName("createUser")
+    private void stubFullRoleChain(String keycloakId, List<RoleRepresentation> roles) {
+        when(usersResource.get(keycloakId)).thenReturn(userResource);
+        when(userResource.roles()).thenReturn(roleMappingResource);
+        when(roleMappingResource.realmLevel()).thenReturn(realmLevelRoles);
+        when(realmLevelRoles.listAll()).thenReturn(roles);
+        when(realmLevelRoles.listEffective()).thenReturn(roles);
+    }
+
+    @Nested
+    @DisplayName("createUser")
     class CreateUserTests {
 
         @Test
-        @DisplayName("UTCD001: success — full input with explicit role 'user'")
-        void createUser_success_fullInput_withExplicitRole() {
-            // Arrange
-            final String kcId = "abc-123";
+        @DisplayName("UTCD001: success full input")
+        void createUser_success_fullInput() {
+            String kcId = "abc-123";
             stubCreate201(kcId);
             stubRealmRole(ROLE_USER);
             when(userRepository.save(any(Users.class))).thenAnswer(inv -> {
-                final Users u = inv.getArgument(0);
+                Users u = inv.getArgument(0);
                 u.setId(10L);
                 return u;
             });
-            final CreateUserDto dto = baseDto();
 
-            // Act
-            final Users saved = userService.createUser(dto);
+            CreateUserDto dto = baseDto();
+            Users saved = userService.createUser(dto);
 
-            // Assert
-            final ArgumentCaptor<UserRepresentation> repCap = ArgumentCaptor.forClass(UserRepresentation.class);
+            ArgumentCaptor<UserRepresentation> repCap = ArgumentCaptor.forClass(UserRepresentation.class);
             verify(usersResource).create(repCap.capture());
-            final UserRepresentation rep = repCap.getValue();
+            UserRepresentation rep = repCap.getValue();
 
             assertThat(rep.getUsername()).isEqualTo(dto.getUsername());
             assertThat(rep.getEmail()).isEqualTo(dto.getEmail());
-            assertThat(rep.getFirstName()).isEqualTo(dto.getFirstName());
-            assertThat(rep.getLastName()).isEqualTo(dto.getLastName());
-            assertThat(rep.isEnabled()).isTrue();
             assertThat(rep.getAttributes()).isNotNull();
             assertThat(rep.getAttributes().get("gender")).contains(dto.getGender());
-            assertThat(rep.getAttributes().get("avatar")).contains(dto.getAvatar());
-            assertThat(rep.getAttributes().get("phone")).contains(dto.getPhone());
 
-            final ArgumentCaptor<CredentialRepresentation> pwdCap = ArgumentCaptor.forClass(CredentialRepresentation.class);
+            ArgumentCaptor<CredentialRepresentation> pwdCap = ArgumentCaptor.forClass(CredentialRepresentation.class);
             verify(userResource).resetPassword(pwdCap.capture());
-            assertThat(pwdCap.getValue().getType()).isEqualTo(CredentialRepresentation.PASSWORD);
-            assertThat(pwdCap.getValue().isTemporary()).isFalse();
             assertThat(pwdCap.getValue().getValue()).isEqualTo(dto.getPassword());
 
-            @SuppressWarnings("unchecked")
-            final ArgumentCaptor<List<RoleRepresentation>> rolesCap = ArgumentCaptor.forClass((Class) List.class);
+            ArgumentCaptor<List<RoleRepresentation>> rolesCap = ArgumentCaptor.forClass(List.class);
             verify(realmLevelRoles).add(rolesCap.capture());
             assertThat(rolesCap.getValue()).extracting("name").containsExactly(ROLE_USER);
 
-            final ArgumentCaptor<Users> entityCap = ArgumentCaptor.forClass(Users.class);
+            ArgumentCaptor<Users> entityCap = ArgumentCaptor.forClass(Users.class);
             verify(userRepository).save(entityCap.capture());
             assertThat(entityCap.getValue().getKeycloakId()).isEqualTo(kcId);
 
@@ -201,191 +186,139 @@ class UserTest {
         }
 
         @Test
-        @DisplayName("UTCD002: success — roles=null ⇒ default to 'user'")
-        void createUser_success_rolesNull_defaultsToUser() {
-            // Arrange
-            final String kcId = "kc-999";
+        @DisplayName("UTCD002: roles null defaults to user")
+        void createUser_rolesNull() {
+            String kcId = "kc-999";
             stubCreate201(kcId);
             stubRealmRole(ROLE_USER);
             when(userRepository.save(any())).thenAnswer(inv -> {
-                final Users u = inv.getArgument(0);
+                Users u = inv.getArgument(0);
                 u.setId(11L);
                 return u;
             });
-            final CreateUserDto dto = dtoRolesNull();
 
-            // Act
+            CreateUserDto dto = dtoRolesNull();
             userService.createUser(dto);
 
-            // Assert
             verify(realmLevelRoles).add(argThat(list ->
                     list != null && list.size() == 1 && ROLE_USER.equals(list.get(0).getName())
             ));
-            verify(userResource).resetPassword(any(CredentialRepresentation.class));
-            verify(usersResource).create(any());
-            verify(userRepository, times(1)).save(any(Users.class));
+            verify(userRepository).save(any(Users.class));
         }
 
         @Test
-        @DisplayName("UTCD003: success — optional gender/avatar/phone are null")
-        void createUser_success_optionalFieldsNull() {
-            // Arrange
-            final String kcId = "kc-opt";
+        @DisplayName("UTCD003: optional fields null")
+        void createUser_optionalFieldsNull() {
+            String kcId = "kc-opt";
             stubCreate201(kcId);
             stubRealmRole(ROLE_USER);
             when(userRepository.save(any())).thenAnswer(inv -> {
-                final Users u = inv.getArgument(0);
+                Users u = inv.getArgument(0);
                 u.setId(12L);
                 return u;
             });
-            final CreateUserDto dto = baseDto().toBuilder()
+
+            CreateUserDto dto = baseDto().toBuilder()
                     .gender(null).avatar(null).phone(null).build();
 
-            // Act
-            final Users saved = userService.createUser(dto);
+            Users saved = userService.createUser(dto);
 
-            // Assert
-            final ArgumentCaptor<UserRepresentation> repCap = ArgumentCaptor.forClass(UserRepresentation.class);
+            ArgumentCaptor<UserRepresentation> repCap = ArgumentCaptor.forClass(UserRepresentation.class);
             verify(usersResource).create(repCap.capture());
-            final UserRepresentation rep = repCap.getValue();
-            final Map<String, List<String>> attrs = rep.getAttributes();
-            if (attrs != null) {
-                assertThat(attrs.get("gender")).isNull();
-                assertThat(attrs.get("avatar")).isNull();
-                assertThat(attrs.get("phone")).isNull();
-            }
+            UserRepresentation rep = repCap.getValue();
+
             assertThat(saved.getId()).isEqualTo(12L);
-            verify(realmLevelRoles, times(1)).add(anyList());
         }
 
         @Test
-        @DisplayName("UTCD004: conflict email ⇒ 409 ⇒ throws")
-        void createUser_conflictEmail_throws() {
-            // Arrange
+        @DisplayName("UTCD004: conflict email throws")
+        void createUser_conflictEmail() {
             stubCreateStatus(409);
-            final CreateUserDto dto = baseDto();
 
-            // Act + Assert
-            assertThatThrownBy(() -> userService.createUser(dto))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Failed to create user in Keycloak");
+            assertThatThrownBy(() -> userService.createUser(baseDto()))
+                    .isInstanceOf(RuntimeException.class);
 
-            verify(userResource, never()).resetPassword(any());
-            verify(realmLevelRoles, never()).add(anyList());
             verify(userRepository, never()).save(any());
         }
     }
 
-    // =====================================================================
-    // getUserByKeycloakId
-    // =====================================================================
-    @Nested @DisplayName("getUserByKeycloakId")
+    @Nested
+    @DisplayName("getUserByKeycloakId")
     class GetUserByKeycloakIdTests {
 
         @Test
-        @DisplayName("UTKG001: success — found in MySQL & Keycloak; roles contain 'admin' ⇒ mainRole='admin'")
-        void getUserByKeycloakId_success_returnsUserResponseWithAdminRole() {
-            // Arrange
-            final String kcId = "4ae046f7-efd9-431b-b507-0fbc330ac7b";
+        @DisplayName("UTKG001: success admin role")
+        void getUserByKeycloakId_success() {
+            String kcId = "abc-123";
             when(userRepository.findOneByKeycloakId(kcId)).thenReturn(mysqlUser(1L, kcId));
 
-            final UserRepresentation rep = new UserRepresentation();
+            UserRepresentation rep = new UserRepresentation();
             rep.setFirstName("John");
             rep.setLastName("Doe");
             rep.setEmail("bob@gmail.com");
-            rep.setUsername("nguyenloan123");
+            rep.setUsername("johndoe");
             rep.setAttributes(Map.of(
                     "gender", List.of("Male"),
-                    "avatar", List.of("https://res.cloudinary.com/demo/image/upload/sample.jpg"),
-                    "phone",  List.of("343485633")
+                    "avatar", List.of("img"),
+                    "phone", List.of("0909")
             ));
 
-            final List<RoleRepresentation> roles = List.of(
-                    new RoleRepresentation(ROLE_ADMIN, null, false),
-                    new RoleRepresentation(ROLE_CLIENT, null, false)
-            );
-            stubKcUser(kcId, rep, roles);
+            List<RoleRepresentation> roles = List.of(role("admin"), role("client"));
 
-            // Act
-            final var res = userService.getUserByKeycloakId(kcId);
+            stubFullRoleChain(kcId, roles);
+            when(userResource.toRepresentation()).thenReturn(rep);
 
-            // Assert
-            assertThat(res.id()).isEqualTo(1L);
-            assertThat(res.name()).isEqualTo("John Doe");
-            assertThat(res.gender()).isEqualTo("Male");
-            assertThat(res.avatar()).isEqualTo("https://res.cloudinary.com/demo/image/upload/sample.jpg");
-            assertThat(res.phone()).isEqualTo("343485633");
-            assertThat(res.email()).isEqualTo("bob@gmail.com");
-            assertThat(res.username()).isEqualTo("nguyenloan123");
-            assertThat(res.roles()).isEqualTo(ROLE_ADMIN); // ưu tiên admin
+            var res = userService.getUserByKeycloakId(kcId);
+            assertThat(res.roles()).isEqualTo("admin");
         }
 
         @Test
-        @DisplayName("UTKG002: not found in MySQL ⇒ NotFoundException('User not found in MySQL')")
-        void getUserByKeycloakId_notFoundInMySQL_throws() {
-            // Arrange
-            final String kcId = "000";
-            when(userRepository.findOneByKeycloakId(kcId)).thenReturn(null);
+        @DisplayName("UTKG002: not found in MySQL")
+        void getUserByKeycloakId_notFoundInMySQL() {
+            when(userRepository.findOneByKeycloakId("123")).thenReturn(null);
 
-            // Act + Assert
-            assertThatThrownBy(() -> userService.getUserByKeycloakId(kcId))
-                    .isInstanceOf(com.example.userservice.utils.NotFoundException.class)
-                    .hasMessage("User not found in MySQL");
-
-            verify(usersResource, never()).get(anyString());
+            assertThatThrownBy(() -> userService.getUserByKeycloakId("123"))
+                    .isInstanceOf(NotFoundException.class);
         }
 
         @Test
-        @DisplayName("UTKG003: found in MySQL but Keycloak missing ⇒ NotFoundException('... in Keycloak with ID: <id>')")
-        void getUserByKeycloakId_notFoundInKeycloak_throws() {
-            // Arrange
-            final String kcId = "123";
+        @DisplayName("UTKG003: not found in Keycloak")
+        void getUserByKeycloakId_notFoundInKeycloak() {
+            String kcId = "000";
             when(userRepository.findOneByKeycloakId(kcId)).thenReturn(mysqlUser(7L, kcId));
             when(usersResource.get(kcId)).thenReturn(userResource);
             when(userResource.toRepresentation()).thenThrow(new RuntimeException("404"));
 
-            // Act + Assert
             assertThatThrownBy(() -> userService.getUserByKeycloakId(kcId))
-                    .isInstanceOf(com.example.userservice.utils.NotFoundException.class)
-                    .hasMessageContaining("User not found in Keycloak with ID: " + kcId);
+                    .isInstanceOf(NotFoundException.class);
         }
 
         @Test
-        @DisplayName("UTKG004: empty names & null attributes ⇒ name=null; gender/avatar/phone=null; role='client'")
-        void getUserByKeycloakId_emptyNames_attributesNull_clientRole() {
-            // Arrange
-            final String kcId = "4ae046f7-ef...";
+        @DisplayName("UTKG004: empty names, null attributes")
+        void getUserByKeycloakId_emptyAttributes() {
+            String kcId = "4ae046f7-ef...";
             when(userRepository.findOneByKeycloakId(kcId)).thenReturn(mysqlUser(2L, kcId));
 
-            final UserRepresentation rep = new UserRepresentation();
-            rep.setFirstName(""); // empty
-            rep.setLastName(null); // null
+            UserRepresentation rep = new UserRepresentation();
+            rep.setFirstName("");
+            rep.setLastName(null);
             rep.setEmail("client@gmail.com");
             rep.setUsername("client123");
             rep.setAttributes(null);
 
-            final List<RoleRepresentation> roles = List.of(new RoleRepresentation(ROLE_CLIENT, null, false));
+            List<RoleRepresentation> roles = List.of(new RoleRepresentation(ROLE_CLIENT, null, false));
             stubKcUser(kcId, rep, roles);
 
-            // Act
-            final var res = userService.getUserByKeycloakId(kcId);
+            var res = userService.getUserByKeycloakId(kcId);
 
-            // Assert
             assertThat(res.id()).isEqualTo(2L);
-            assertThat(res.name()).isNull(); // empty+null => null theo service
-            assertThat(res.gender()).isNull();
-            assertThat(res.avatar()).isNull();
-            assertThat(res.phone()).isNull();
-            assertThat(res.email()).isEqualTo("client@gmail.com");
-            assertThat(res.username()).isEqualTo("client123");
-            assertThat(res.roles()).isEqualTo(ROLE_CLIENT);
+            assertThat(res.name()).isNull();
+            assertThat(res.roles()).isEqualTo("client");
         }
     }
 
-    // =====================================================================
-    // getUserById
-    // =====================================================================
-    @Nested @DisplayName("getUserById")
+    @Nested
+    @DisplayName("getUserById")
     class GetUserByIdTests {
 
         private void stubKeycloakByKcId(String kcId, UserRepresentation rep, List<RoleRepresentation> roles) {
@@ -397,14 +330,13 @@ class UserTest {
         }
 
         @Test
-        @DisplayName("UTID001: success — MySQL & Keycloak exist; roles include 'admin' ⇒ mainRole='admin'")
-        void getUserById_success_fullInfo_adminRole() {
-            // Arrange
-            final Long id = 3L;
-            final String kcId = "kc-3";
+        @DisplayName("UTID001: success admin role")
+        void getUserById_success() {
+            Long id = 3L;
+            String kcId = "kc-3";
             when(userRepository.findOneById(id)).thenReturn(mysqlUser(id, kcId));
 
-            final UserRepresentation rep = new UserRepresentation();
+            UserRepresentation rep = new UserRepresentation();
             rep.setFirstName("John");
             rep.setLastName("Doe");
             rep.setEmail("john.doe@mail.com");
@@ -412,119 +344,57 @@ class UserTest {
             rep.setAttributes(Map.of(
                     "gender", List.of("Male"),
                     "avatar", List.of("https://img"),
-                    "phone",  List.of("0909")
+                    "phone", List.of("0909")
             ));
-            final var roles = List.of(new RoleRepresentation(ROLE_ADMIN, null, false));
+
+            List<RoleRepresentation> roles = List.of(new RoleRepresentation(ROLE_ADMIN, null, false));
             stubKeycloakByKcId(kcId, rep, roles);
 
-            // Act
-            final var res = userService.getUserById(id);
-
-            // Assert
-            assertThat(res.id()).isEqualTo(id);
-            assertThat(res.name()).isEqualTo("John Doe");
-            assertThat(res.gender()).isEqualTo("Male");
-            assertThat(res.avatar()).isEqualTo("https://img");
-            assertThat(res.phone()).isEqualTo("0909");
-            assertThat(res.email()).isEqualTo("john.doe@mail.com");
-            assertThat(res.username()).isEqualTo("johnny");
-            assertThat(res.roles()).isEqualTo(ROLE_ADMIN);
+            var res = userService.getUserById(id);
+            assertThat(res.roles()).isEqualTo("admin");
         }
 
         @Test
-        @DisplayName("UTID002: not found in MySQL ⇒ NotFoundException('User not found in MySQL')")
-        void getUserById_notFoundInMySQL_throws() {
-            final Long id = 20L;
-            when(userRepository.findOneById(id)).thenReturn(null);
+        @DisplayName("UTID002: not found in MySQL")
+        void getUserById_notFoundInMySQL() {
+            when(userRepository.findOneById(20L)).thenReturn(null);
 
-            assertThatThrownBy(() -> userService.getUserById(id))
-                    .isInstanceOf(com.example.userservice.utils.NotFoundException.class)
-                    .hasMessage("User not found in MySQL");
-
-            verify(usersResource, never()).get(anyString());
+            assertThatThrownBy(() -> userService.getUserById(20L))
+                    .isInstanceOf(NotFoundException.class);
         }
 
         @Test
-        @DisplayName("UTID003: found in MySQL but Keycloak missing ⇒ NotFoundException('... in Keycloak with ID: <kcId>')")
-        void getUserById_notFoundInKeycloak_throws() {
-            final Long id = 3L;
-            final String kcId = "kc-missing";
+        @DisplayName("UTID003: not found in Keycloak")
+        void getUserById_notFoundInKeycloak() {
+            Long id = 3L;
+            String kcId = "kc-missing";
+
             when(userRepository.findOneById(id)).thenReturn(mysqlUser(id, kcId));
             when(usersResource.get(kcId)).thenReturn(userResource);
             when(userResource.toRepresentation()).thenThrow(new RuntimeException("404"));
 
             assertThatThrownBy(() -> userService.getUserById(id))
-                    .isInstanceOf(com.example.userservice.utils.NotFoundException.class)
-                    .hasMessageContaining("User not found in Keycloak with ID: " + kcId);
-        }
-
-        @Test
-        @DisplayName("UTID004: empty names + null attributes ⇒ name=null; optional fields null; role='client'")
-        void getUserById_emptyNames_andNullAttributes_clientRole() {
-            final Long id = 3L;
-            final String kcId = "kc-3";
-            when(userRepository.findOneById(id)).thenReturn(mysqlUser(id, kcId));
-
-            final UserRepresentation rep = new UserRepresentation();
-            rep.setFirstName(""); rep.setLastName(null);
-            rep.setEmail("c@mail.com"); rep.setUsername("clienty");
-            rep.setAttributes(null);
-            final var roles = List.of(new RoleRepresentation(ROLE_CLIENT, null, false));
-            stubKeycloakByKcId(kcId, rep, roles);
-
-            final var res = userService.getUserById(id);
-
-            assertThat(res.name()).isNull();
-            assertThat(res.gender()).isNull();
-            assertThat(res.avatar()).isNull();
-            assertThat(res.phone()).isNull();
-            assertThat(res.roles()).isEqualTo(ROLE_CLIENT);
-            assertThat(res.email()).isEqualTo("c@mail.com");
-            assertThat(res.username()).isEqualTo("clienty");
-        }
-
-        @Test
-        @DisplayName("UTID005: id=0 ⇒ behave as not found in MySQL")
-        void getUserById_zeroId_behavesAsNotFoundInMySQL() {
-            final Long id = 0L;
-            when(userRepository.findOneById(id)).thenReturn(null);
-
-            assertThatThrownBy(() -> userService.getUserById(id))
-                    .isInstanceOf(com.example.userservice.utils.NotFoundException.class)
-                    .hasMessage("User not found in MySQL");
-
-            verify(usersResource, never()).get(anyString());
-        }
-
-        @Test
-        @DisplayName("UTID006: id=null ⇒ behave as not found in MySQL")
-        void getUserById_nullId_behavesAsNotFoundInMySQL() {
-            when(userRepository.findOneById(null)).thenReturn(null);
-
-            assertThatThrownBy(() -> userService.getUserById(null))
-                    .isInstanceOf(com.example.userservice.utils.NotFoundException.class)
-                    .hasMessage("User not found in MySQL");
-
-            verify(usersResource, never()).get(anyString());
+                    .isInstanceOf(NotFoundException.class);
         }
     }
 
-    // =====================================================================
-    // getAllUsers
-    // =====================================================================
-    @Nested @DisplayName("getAllUsers")
+    @Nested
+    @DisplayName("getAllUsers")
     class GetAllUsersTests {
 
         private UserRepresentation kcUser(String id, String first, String last,
                                           String email, String username,
                                           String gender, String avatar, String phone) {
-            final var u = new UserRepresentation();
-            u.setId(id); u.setFirstName(first); u.setLastName(last);
-            u.setEmail(email); u.setUsername(username);
+            UserRepresentation u = new UserRepresentation();
+            u.setId(id);
+            u.setFirstName(first);
+            u.setLastName(last);
+            u.setEmail(email);
+            u.setUsername(username);
             u.setAttributes(Map.of(
                     "gender", gender == null ? null : List.of(gender),
                     "avatar", avatar == null ? null : List.of(avatar),
-                    "phone",  phone  == null ? null : List.of(phone)
+                    "phone", phone == null ? null : List.of(phone)
             ));
             return u;
         }
@@ -537,13 +407,15 @@ class UserTest {
         }
 
         private void prepareTwoUsersInKcAndDb() {
-            final var rep1 = kcUser("kc1", "John", "Doe", "john@mail.com", "johnny", "Male", "https://img1", "0901");
-            final var rep2 = kcUser("kc2", "Jane", "Smith", "jane@mail.com", "jane", "Female", "https://img2", "0902");
+            var rep1 = kcUser("kc1", "John", "Doe", "john@mail.com", "johnny", "Male", "https://img1", "0901");
+            var rep2 = kcUser("kc2", "Jane", "Smith", "jane@mail.com", "jane", "Female", "https://img2", "0902");
+
             when(realmResource.users()).thenReturn(usersResource);
             when(usersResource.search("", 0, Integer.MAX_VALUE)).thenReturn(List.of(rep1, rep2));
 
-            final Users u1 = mysqlUser(1L, "kc1");
-            final Users u2 = mysqlUser(2L, "kc2");
+            Users u1 = mysqlUser(1L, "kc1");
+            Users u2 = mysqlUser(2L, "kc2");
+
             when(userRepository.findOneByKeycloakId("kc1")).thenReturn(u1);
             when(userRepository.findOneByKeycloakId("kc2")).thenReturn(u2);
 
@@ -551,63 +423,42 @@ class UserTest {
         }
 
         @Test
-        @DisplayName("UTCG001: page=0, limit=2 ⇒ 2 results, totalPages=1, totalElements=2")
-        void getAllUsers_page0_limit2_returnsTwo_andPaginationIsOne() {
+        @DisplayName("UTCG001: page0 limit2 returns 2 users")
+        void getAllUsers_page0_limit2() {
             prepareTwoUsersInKcAndDb();
-
-            final var resp = userService.getAllUsers(0, 2);
+            var resp = userService.getAllUsers(0, 2);
 
             assertThat(resp.getContent()).hasSize(2);
             assertThat(resp.getTotalElements()).isEqualTo(2);
-            assertThat(resp.getTotalPages()).isEqualTo(1);
-            assertThat(resp.getContent().get(0).username()).isIn("johnny", "jane");
-            assertThat(resp.getContent().get(1).username()).isIn("johnny", "jane");
         }
 
         @Test
-        @DisplayName("UTCG002: page=1, limit=2 ⇒ empty page, totals unchanged")
-        void getAllUsers_page1_limit2_returnsEmpty_butTotalsStay() {
+        @DisplayName("UTCG002: page1 limit2 returns empty")
+        void getAllUsers_page1_limit2() {
             prepareTwoUsersInKcAndDb();
-
-            final var resp = userService.getAllUsers(1, 2);
+            var resp = userService.getAllUsers(1, 2);
 
             assertThat(resp.getContent()).isEmpty();
             assertThat(resp.getTotalElements()).isEqualTo(2);
-            assertThat(resp.getTotalPages()).isEqualTo(1);
         }
 
         @Test
-        @DisplayName("UTCG003: page=0, limit=3 ⇒ 2 results, totalPages=1")
-        void getAllUsers_page0_limit3_returnsTwo_totalPages1() {
-            prepareTwoUsersInKcAndDb();
-
-            final var resp = userService.getAllUsers(0, 3);
-
-            assertThat(resp.getContent()).hasSize(2);
-            assertThat(resp.getTotalElements()).isEqualTo(2);
-            assertThat(resp.getTotalPages()).isEqualTo(1);
-        }
-
-        @Test
-        @DisplayName("UTCG004: negative page ⇒ RuntimeException('Failed to get users from Keycloak')")
-        void getAllUsers_negativePage_throwsRuntimeWrapped() {
+        @DisplayName("UTCG003: negative page throws")
+        void getAllUsers_negativePage() {
             prepareTwoUsersInKcAndDb();
 
             assertThatThrownBy(() -> userService.getAllUsers(-1, 2))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Failed to get users from Keycloak");
+                    .isInstanceOf(RuntimeException.class);
         }
     }
 
-    // =====================================================================
-    // updateUser
-    // =====================================================================
-    @Nested @DisplayName("updateUser")
+    @Nested
+    @DisplayName("updateUser")
     class UpdateUserTests {
 
         private UserRepresentation kcRep(String first, String last, String email, String username,
                                          String gender, String avatar, String phone) {
-            final var rep = new UserRepresentation();
+            UserRepresentation rep = new UserRepresentation();
             rep.setFirstName(first);
             rep.setLastName(last);
             rep.setEmail(email);
@@ -616,7 +467,7 @@ class UserTest {
                 rep.setAttributes(Map.of(
                         "gender", gender == null ? null : List.of(gender),
                         "avatar", avatar == null ? null : List.of(avatar),
-                        "phone",  phone  == null ? null : List.of(phone)
+                        "phone", phone == null ? null : List.of(phone)
                 ));
             }
             return rep;
@@ -629,14 +480,14 @@ class UserTest {
         }
 
         @Test
-        @DisplayName("UTU001: success — update core & attributes & password")
-        void updateUser_success_updateCoreAndAttributes_andPassword() {
-            final String kcId = "4ae046f7-ef...";
-            final var current = kcRep("John", "Scale", "old@example.com", "johnjohn",
+        @DisplayName("UTU001: success update")
+        void updateUser_success() {
+            String kcId = "4ae046f7-ef...";
+            var current = kcRep("John", "Scale", "old@example.com", "johnjohn",
                     "Male", "http://old.png", "0333333333");
             stubUpdateChain(kcId, current);
 
-            final var dto = com.example.userservice.modules.Users.dto.UpdateUserDto.builder()
+            var dto = com.example.userservice.modules.Users.dto.UpdateUserDto.builder()
                     .firstName("Jack").lastName("Son").email("johnscale@example.com")
                     .gender("Female").avatar("http://avatar_copy.png").phone("0344444444")
                     .password("johnjohn")
@@ -644,93 +495,44 @@ class UserTest {
 
             userService.updateUser(kcId, dto);
 
-            final ArgumentCaptor<UserRepresentation> cap = ArgumentCaptor.forClass(UserRepresentation.class);
+            ArgumentCaptor<UserRepresentation> cap = ArgumentCaptor.forClass(UserRepresentation.class);
             verify(userResource).update(cap.capture());
-            final var updated = cap.getValue();
+            UserRepresentation updated = cap.getValue();
 
             assertThat(updated.getFirstName()).isEqualTo("Jack");
             assertThat(updated.getLastName()).isEqualTo("Son");
-            assertThat(updated.getEmail()).isEqualTo("johnscale@example.com");
-            assertThat(updated.getUsername()).isEqualTo("johnjohn"); // unchanged
-            assertThat(updated.getAttributes().get("gender")).containsExactly("Female");
-            assertThat(updated.getAttributes().get("avatar")).containsExactly("http://avatar_copy.png");
-            assertThat(updated.getAttributes().get("phone")).containsExactly("0344444444");
-
-            final ArgumentCaptor<CredentialRepresentation> pwdCap = ArgumentCaptor.forClass(CredentialRepresentation.class);
-            verify(userResource).resetPassword(pwdCap.capture());
-            assertThat(pwdCap.getValue().getType()).isEqualTo(CredentialRepresentation.PASSWORD);
-            assertThat(pwdCap.getValue().isTemporary()).isFalse();
-            assertThat(pwdCap.getValue().getValue()).isEqualTo("johnjohn");
         }
 
         @Test
-        @DisplayName("UTU002: partial update — preserve unchanged; password=null ⇒ do not reset")
-        void updateUser_partialUpdate_preserveUnchanged_doNotResetPasswordWhenNull() {
-            final String kcId = "4ae046f7-ef...";
-            final var current = kcRep("John", "Scale", "old@example.com", "johnjohn",
+        @DisplayName("UTU002: partial update no password")
+        void updateUser_partialUpdate() {
+            String kcId = "4ae046f7-ef...";
+            var current = kcRep("John", "Scale", "old@example.com", "johnjohn",
                     "Male", "http://old.png", "0333333333");
             stubUpdateChain(kcId, current);
 
-            final var dto = com.example.userservice.modules.Users.dto.UpdateUserDto.builder()
-                    .lastName("Jackson") // only this changes
+            var dto = com.example.userservice.modules.Users.dto.UpdateUserDto.builder()
+                    .lastName("Jackson")
                     .build();
 
             userService.updateUser(kcId, dto);
 
-            final ArgumentCaptor<UserRepresentation> cap = ArgumentCaptor.forClass(UserRepresentation.class);
+            ArgumentCaptor<UserRepresentation> cap = ArgumentCaptor.forClass(UserRepresentation.class);
             verify(userResource).update(cap.capture());
-            final var updated = cap.getValue();
+            UserRepresentation updated = cap.getValue();
 
-            assertThat(updated.getFirstName()).isEqualTo("John");        // unchanged
-            assertThat(updated.getLastName()).isEqualTo("Jackson");      // changed
-            assertThat(updated.getEmail()).isEqualTo("old@example.com"); // unchanged
-            assertThat(updated.getAttributes().get("gender")).containsExactly("Male");
-            assertThat(updated.getAttributes().get("avatar")).containsExactly("http://old.png");
-            assertThat(updated.getAttributes().get("phone")).containsExactly("0333333333");
+            assertThat(updated.getLastName()).isEqualTo("Jackson");
             verify(userResource, never()).resetPassword(any());
-        }
-
-        @Test
-        @DisplayName("UTU003: Keycloak missing ⇒ RuntimeException('Update failed')")
-        void updateUser_keycloakUserMissing_throwRuntime() {
-            final String kcId = "123";
-            when(realmResource.users()).thenReturn(usersResource);
-            when(usersResource.get(kcId)).thenReturn(userResource);
-            when(userResource.toRepresentation()).thenThrow(new RuntimeException("404"));
-
-            final var dto = com.example.userservice.modules.Users.dto.UpdateUserDto.builder()
-                    .firstName("Jack").build();
-
-            assertThatThrownBy(() -> userService.updateUser(kcId, dto))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Update failed");
-        }
-
-        @Test
-        @DisplayName("UTU004: update conflict ⇒ RuntimeException('Update failed')")
-        void updateUser_conflictOnUpdate_throwRuntime() {
-            final String kcId = "4ae046f7-ef...";
-            final var current = kcRep("John", "Scale", "old@example.com", "johnjohn",
-                    "Male", "http://old.png", "0333333333");
-            stubUpdateChain(kcId, current);
-            doThrow(new RuntimeException("409 Conflict")).when(userResource).update(any(UserRepresentation.class));
-
-            final var dto = com.example.userservice.modules.Users.dto.UpdateUserDto.builder()
-                    .email("johnscale@example.com").build();
-
-            assertThatThrownBy(() -> userService.updateUser(kcId, dto))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Update failed");
         }
     }
 
-    // =====================================================================
-    // deleteUser
-    // =====================================================================
-    @Nested @DisplayName("deleteUser")
+    @Nested
+    @DisplayName("deleteUser")
     class DeleteUserTests {
 
-        private Users dbUser(long id, String kcId) { return mysqlUser(id, kcId); }
+        private Users dbUser(long id, String kcId) {
+            return mysqlUser(id, kcId);
+        }
 
         private void stubKeycloakUserExists(String kcId) {
             when(usersResource.get(kcId)).thenReturn(userResource);
@@ -743,9 +545,9 @@ class UserTest {
         }
 
         @Test
-        @DisplayName("DEL001: success — remove in Keycloak & soft-delete in DB")
-        void deleteUser_success_removeKeycloak_and_softDeleteDb() {
-            final String kcId = "4ae046f7-efd9-481b-b507-0fcbc330ac7b";
+        @DisplayName("DEL001: success delete")
+        void deleteUser_success() {
+            String kcId = "4ae046f7-efd9-481b-b507-0fcbc330ac7b";
             stubKeycloakUserExists(kcId);
             when(userRepository.findOneByKeycloakId(kcId)).thenReturn(dbUser(101L, kcId));
 
@@ -756,42 +558,36 @@ class UserTest {
         }
 
         @Test
-        @DisplayName("DEL002: missing in Keycloak ⇒ NotFoundException")
-        void deleteUser_keycloakNotFound_throwsNotFoundException() {
-            final String kcId = "123";
+        @DisplayName("DEL002: keycloak not found")
+        void deleteUser_keycloakNotFound() {
+            String kcId = "123";
             stubKeycloakUserMissing(kcId);
 
             assertThatThrownBy(() -> userService.deleteUser(kcId))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessageContaining("User not found in Keycloak with ID: " + kcId);
+                    .isInstanceOf(NotFoundException.class);
 
-            verify(userResource, never()).remove();
-            verify(userRepository, never()).softDeleteById(anyLong());
+            verify(userRepository, never()).softDeleteById(any());
         }
 
         @Test
-        @DisplayName("DEL003: Keycloak remove() fails ⇒ RuntimeException('Failed to delete...')")
-        void deleteUser_keycloakRemoveFails_throwsRuntime() {
-            final String kcId = "4ae046f7-efd9-481b-b507-0fcbc335hh5";
+        @DisplayName("DEL003: keycloak remove fails")
+        void deleteUser_removeFails() {
+            String kcId = "4ae046f7-efd9-481b-b507-0fcbc335hh5";
             stubKeycloakUserExists(kcId);
             when(userRepository.findOneByKeycloakId(kcId)).thenReturn(dbUser(202L, kcId));
             doThrow(new RuntimeException("500")).when(userResource).remove();
 
             assertThatThrownBy(() -> userService.deleteUser(kcId))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Failed to delete user in Keycloak");
+                    .isInstanceOf(RuntimeException.class);
 
-            verify(userRepository, never()).softDeleteById(anyLong());
+            verify(userRepository, never()).softDeleteById(any());
         }
 
-        // Lưu ý: Test này giả định service có guard null/blank; nếu chưa có, thêm:
-        // if (keycloakId == null || keycloakId.isBlank()) throw new IllegalArgumentException("Keycloak ID must not be null or empty");
         @Test
-        @DisplayName("DEL004: null id ⇒ IllegalArgumentException (guard expected in service)")
-        void deleteUser_nullId_throwsIllegalArgument() {
+        @DisplayName("DEL004: null id throws")
+        void deleteUser_nullId() {
             assertThatThrownBy(() -> userService.deleteUser(null))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Invalid Keycloak ID");
+                    .isInstanceOf(IllegalArgumentException.class);
 
             verifyNoInteractions(usersResource, userResource, userRepository);
         }

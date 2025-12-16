@@ -122,8 +122,6 @@ public class UserService {
             throw new NotFoundException("User not found in MySQL");
         }
 
-
-
         // 2. Lấy thông tin user từ Keycloak
         UserRepresentation keycloakUser;
         try {
@@ -382,6 +380,43 @@ public class UserService {
 
     public void deleteUser(String keycloakId) {
 
+        if (keycloakId == null || keycloakId.isEmpty()) {
+            throw new IllegalArgumentException("Invalid Keycloak ID");
+        }
+
+        try {
+            // 1. Lấy user từ Keycloak theo keycloakId
+            UserResource userResource = realmResource().users().get(keycloakId);
+
+            // 2. Kiểm tra xem user có tồn tại không (tránh lỗi 404)
+            UserRepresentation user = userResource.toRepresentation();
+            if (user == null) {
+                throw new NotFoundException("User not found in Keycloak with ID: " + keycloakId);
+            }
+
+            // 3. Gọi API xóa user
+            userResource.remove();
+
+            Users userMySQL = userRepository.findOneByKeycloakId(keycloakId);
+            if (userMySQL != null) {
+                userRepository.softDeleteById(userMySQL.getId());
+            }
+
+        } catch (NotFoundException e) {
+            logger.error("User not found in Keycloak: {}", e.getMessage());
+            throw new NotFoundException("User not found in Keycloak with ID: " + keycloakId);
+        } catch (Exception e) {
+            logger.error("Failed to delete user in Keycloak: {}", e.getMessage());
+            throw new RuntimeException("Failed to delete user in Keycloak", e);
+        }
+    }
+
+    public void deleteUserById(Long id) {
+        Users userToGetKeycloakId = userRepository.findOneById(id);
+        if (userToGetKeycloakId == null) {
+            throw new NotFoundException("User does not exist");
+        }
+        String keycloakId = userToGetKeycloakId.getKeycloakId();
         if (keycloakId == null || keycloakId.isEmpty()) {
             throw new IllegalArgumentException("Invalid Keycloak ID");
         }

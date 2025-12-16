@@ -66,10 +66,7 @@ public class ProductTest {
 
     @Nested
     @DisplayName("createFlashSale")
-    class createFlashSale {
-        // ==========================================================
-        // UTCP001 — Happy path: valid data, categoryId exists (=1)
-        // ==========================================================
+    class createProduct {
         @Test
         @DisplayName("UTCP001: Valid input (Laptop/Dell/price=100000/qty=10/categoryId=1) ⇒ saved with category")
         void createProduct_success_allValid() {
@@ -111,9 +108,6 @@ public class ProductTest {
             assertThat(saved.getId()).isEqualTo(999L);
         }
 
-        // ==========================================================
-        // UTCP002 — price negative ⇒ IllegalArgumentException
-        // ==========================================================
         @Test
         @DisplayName("UTCP002: price = -100000 ⇒ IllegalArgumentException('Quantity and Price must be non-negative')")
         void createProduct_fail_negativePrice() {
@@ -130,9 +124,6 @@ public class ProductTest {
             verifyNoInteractions(categoryService, productRepository);
         }
 
-        // ==========================================================
-        // UTCP003 — quantity negative ⇒ IllegalArgumentException
-        // ==========================================================
         @Test
         @DisplayName("UTCP003: quantity = -1 ⇒ IllegalArgumentException('Quantity and Price must be non-negative')")
         void createProduct_fail_negativeQuantity() {
@@ -149,9 +140,6 @@ public class ProductTest {
             verifyNoInteractions(categoryService, productRepository);
         }
 
-        // ==========================================================
-        // UTCP004 — category not found (e.g., id=100)
-        // ==========================================================
         @Test
         @DisplayName("UTCP004: categoryId=100 (not exists) ⇒ NotFoundException('Category not found')")
         void createProduct_fail_categoryNotFound() {
@@ -172,9 +160,6 @@ public class ProductTest {
             verify(productRepository, never()).save(any());
         }
 
-        // ==========================================================
-        // UTCP005 — boundary: price=0, quantity=0 (valid)
-        // ==========================================================
         @Test
         @DisplayName("UTCP005: price=0, quantity=0, categoryId=1 ⇒ success")
         void createProduct_success_zeroPriceAndQuantity() {
@@ -194,9 +179,6 @@ public class ProductTest {
             assertThat(saved.getCategory().getId()).isEqualTo(1L);
         }
 
-        // ==========================================================
-        // UTCP006 — verify URLs/available copied as-is
-        // ==========================================================
         @Test
         @DisplayName("UTCP006: fields copy check (imageUrl, videoUrl, available)")
         void createProduct_success_fieldsCopied() {
