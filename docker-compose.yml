@@ -210,7 +210,7 @@ services:
       EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: 30
 
   zookeeper:
-    image: bitnami/zookeeper:3.9
+    image: soldevelo/zookeeper:3.9
     container_name: zookeeper
     environment:
       ALLOW_ANONYMOUS_LOGIN: yes
